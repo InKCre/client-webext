@@ -79,6 +79,43 @@ pnpm i
 
 ## Usage
 
+### Environment Variables
+
+This project uses environment variables for configuration. Vite automatically loads different `.env` files based on the current mode:
+
+**File Loading Priority (from highest to lowest):**
+1. `.env.[mode].local` - Local overrides for specific mode
+2. `.env.[mode]` - Environment-specific variables
+3. `.env.local` - Local overrides
+4. `.env` - Default variables
+
+**Available Modes:**
+- `development` (when running `pnpm dev`)
+- `production` (when running `pnpm build`)
+- `staging` (when running `pnpm dev:staging` or `pnpm build:staging`)
+
+**Example Files:**
+- `.env.development` - Development environment variables
+- `.env.production` - Production environment variables
+- `.env.staging` - Staging environment variables
+- `.env` - Default/fallback variables
+
+**Setup:**
+```bash
+# Copy the example file
+cp .env.example .env
+
+# For development, create .env.development
+cp .env.example .env.development
+
+# For production, create .env.production
+cp .env.example .env.production
+```
+
+**Available Variables:**
+- `VITE_INKCRE_API` - The API endpoint for InKCre services
+- `VITE_DEBUG` - Enable/disable debug mode (true/false)
+
 ### Folders
 
 - `src` - main source.

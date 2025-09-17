@@ -1,22 +1,76 @@
 <script setup lang="ts">
-import { storageDemo } from '~/logic/storage'
+import { onMessage } from "webext-bridge/popup";
+import TakingNote from "./components/TakingNote.vue";
+import Explain from "./components/Explain.vue";
 
-function openOptionsPage() {
-  browser.runtime.openOptionsPage()
-}
+const activeTab = ref("taking-note");
+const url = ref<string>();
+
+onMessage("set-sidepanel-params", ({ data }) => {
+  activeTab.value = data.mode;
+  url.value = data.url;
+});
 </script>
 
 <template>
-  <main class="w-full px-4 py-5 text-center text-gray-700">
-    <Logo />
-    <div>Sidepanel</div>
-    <SharedSubtitle />
-
-    <button class="btn mt-2" @click="openOptionsPage">
-      Open Options
-    </button>
-    <div class="mt-2">
-      <span class="opacity-50">Storage:</span> {{ storageDemo }}
+  <div class="tabs">
+    <div class="tab-buttons">
+      <button
+        class="tab-button"
+        :class="{ active: activeTab === 'taking-note' }"
+        @click="activeTab = 'taking-note'"
+      >
+        Taking Note
+      </button>
+      <button
+        class="tab-button"
+        :class="{ active: activeTab === 'explain' }"
+        @click="activeTab = 'explain'"
+      >
+        Explain
+      </button>
     </div>
-  </main>
+    <div class="tab-content">
+      <TakingNote
+        v-show="activeTab === 'taking-note'"
+        :url="url"
+        @activate="activeTab = $event"
+      />
+      <Explain
+        v-show="activeTab === 'explain'"
+        @activate="activeTab = $event"
+      />
+    </div>
+  </div>
 </template>
+
+<style scoped>
+.tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tab-buttons {
+  display: flex;
+  border-bottom: 1px solid #ccc;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-button.active {
+  border-bottom-color: #007acc;
+}
+
+.tab-content {
+  flex: 1;
+  overflow: auto;
+}
+</style>

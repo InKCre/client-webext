@@ -1,3 +1,8 @@
-import { useWebExtensionStorage } from '~/composables/useWebExtensionStorage'
+import { useWebExtensionStorage } from "~/composables/useWebExtensionStorage";
 
-export const { data: storageDemo, dataReady: storageDemoReady } = useWebExtensionStorage('webext-demo', 'Storage Demo')
+// INKCRE_API storage with default from environment variable
+export const { data: inkcreApi, dataReady: inkcreApiReady } =
+  useWebExtensionStorage(
+    "inkcre-api",
+    import.meta.env.VITE_INKCRE_API || "https://api.inkcre.com"
+  );

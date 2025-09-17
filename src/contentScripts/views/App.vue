@@ -1,31 +1,60 @@
 <script setup lang="ts">
-import { useToggle } from '@vueuse/core'
-import 'uno.css'
+import { useToggle } from "@vueuse/core";
+import "uno.css";
+import ActionBar from "../components/ActionBar.vue";
 
-const [show, toggle] = useToggle(false)
+const [showActionBar, toggleActionBar] = useToggle(false);
+const actionBarPosition = ref({ x: 0, y: 0 });
+const lastSelectionText = ref("");
+
+const handleSelection = (event: MouseEvent) => {
+  const selection = window.getSelection();
+  const currentText = selection ? selection.toString().trim() : "";
+  if (currentText && currentText !== lastSelectionText.value) {
+    try {
+      actionBarPosition.value = {
+        x: event.clientX + 10,
+        y: event.clientY + 10,
+      };
+      toggleActionBar(true);
+      lastSelectionText.value = currentText;
+    } catch (e) {
+      // No valid range
+      toggleActionBar(false);
+      lastSelectionText.value = "";
+    }
+  }
+};
+
+const handleSelectionChange = () => {
+  const selection = window.getSelection();
+  const currentText = selection ? selection.toString().trim() : "";
+  if (!currentText) {
+    toggleActionBar(false);
+    lastSelectionText.value = "";
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("mouseup", handleSelection);
+  document.addEventListener("selectionchange", handleSelectionChange);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("mouseup", handleSelection);
+  document.removeEventListener("selectionchange", handleSelectionChange);
+});
 </script>
 
 <template>
-  <div class="fixed right-0 bottom-0 m-5 z-100 flex items-end font-sans select-none leading-1em">
-    <div
-      v-show="show"
-      class="bg-white text-gray-800 rounded-lg shadow w-max h-min"
-      p="x-4 y-2"
-      m="y-auto r-2"
-      transition="opacity duration-300"
-      :class="show ? 'opacity-100' : 'opacity-0'"
-    >
-      <h1 class="text-lg">
-        Vitesse WebExt
-      </h1>
-      <SharedSubtitle />
-    </div>
-    <button
-      class="flex w-10 h-10 rounded-full shadow cursor-pointer border-none"
-      bg="teal-600 hover:teal-700"
-      @click="toggle()"
-    >
-      <pixelarticons-power class="block m-auto text-white text-lg" />
-    </button>
+  <div
+    v-show="showActionBar"
+    class="fixed z-100"
+    :style="{
+      left: actionBarPosition.x + 'px',
+      top: actionBarPosition.y + 'px',
+    }"
+  >
+    <ActionBar />
   </div>
 </template>

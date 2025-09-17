@@ -1,0 +1,29 @@
+- [x] 缩小 Sidepanel 编辑器的高度
+- [ ] Tab 添加出向关系以及块 （Shift+Tab 添加入向关系以及块）。出向关系在下方，入向关系在上方。笔记来源块通过不同的边框颜色高亮出来。
+  - [x] Shift+Tab 没有插入入向关系而插入了出向
+  - [x] 切块和创建块的快捷键冲突（效果重复）
+  - [x] 切块滚动不正确
+  - [x] 前进的滚动不正确（卡在一半）
+- [x] Shift + Delete 删除当前 Arc
+- [x] 直接选中 BlockEditor 进行 focus，而不是通过 data-node-id 选中 textarea
+- [x] 添加 current / total 指示
+- [x] 封装 ArcEditor （原来的改为 ArcsEditor ）
+  - [x] 使 RelationEditor 同样暴露 focus 方法
+  - [x] 修改 BlockEditor, RelationEditor 的 modelValue 类型为对应的 Form
+- [x] 按下 Alt+Shift 切换聚焦块/关系（ArcEditor 负责，仅在当前 BlockEditor 或 RelationEditor 聚焦时响应）
+- [x] 添加 StarGraphForm/ArcForm 数据模型
+- [ ] 抽象出 Shortcut 组件，可以为如按钮、滑条等可交互组件的行为触发添加快捷键（并且和手势操作有一样的反馈）（或者使用第三方库）
+- [x] Explain 的上下文是完整保存为块的页面内容
+  - 在打开 Sidepanel Explain 之前，ActionBar 需要提取整个页面内容，并使用 StarForm 插入 `block(url, webpage, url)` -> `relation(content)` -> `block(pageContent, webpage, url)`；其中第一个 block 就是传递给 Sidepanel Explain 的页面内容块
+- [ ] 提供一键笔记的操作（不需要打开到边栏，会自动选择合适的解析器（如选中的是链接））（选中的是链接时也不能复用 Explain 保存页面的逻辑 ... 或者也可以，只是会莫名其妙在打开另一个标签页）
+- [ ] 将解释的结果添加为笔记（跳到 TakingNote Tab ）
+  - [x] 因此需要分离 Explain 和 TakingNote 的 selected text
+- [ ] 仅在聚焦到 Explain 时才响应 text 的更新（或者延迟到聚焦时）
+  - 也可能需要考虑删除用 Tabs 分隔
+- [ ] 既然是 TakingNote，那么默认的出向关系当然就是笔记啦！
+- [ ] 提交笔记的动画是将当前表单区域下移到历史区域（有动画，折起成卡片），卡片右侧是指示，失败了可以重试
+  - [ ] 历史区域显示的是该网页的所有块
+  - [x] TakingNote 主块链接到选区来源的网页块
+- [ ] 不要在 contentScript 里面进行请求或者至少请求的同时打开 Sidepanel（存在依赖关系就不行）
+- [ ] 为什么 JSON.stringfiy(this) 不行
+- [ ] 实现块、关系的数据模型定义（基于类）并对接相应的 API （ APIBackend.HTTP ）

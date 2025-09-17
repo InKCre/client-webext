@@ -1,5 +1,7 @@
 {
-  "cSpell.words": ["Vitesse"],
+  "cSpell.words": [
+    "Vitesse"
+  ],
   "typescript.tsdk": "node_modules/typescript/lib",
   "vite.autoStart": false,
   "eslint.experimental.useFlatConfig": true,
@@ -8,5 +10,11 @@
   },
   "files.associations": {
     "*.css": "postcss"
-  }
+  },
+  "files.exclude": {
+    "**/__tests__": true,
+    "node_modules": true
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode"
 }
