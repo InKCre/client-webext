@@ -13,10 +13,10 @@ declare module "webext-bridge" {
       text: string;
       mode: string;
       url: string;
-      pageBlockId?: number;
+      pageContent?: string;
     };
     "set-taking-note-params": { text: string };
-    "set-explain-params": { text: string; pageBlockId?: number };
+    "set-explain-params": { text: string; pageContent: string; url: string };
     "set-sidepanel-params": { mode: string; url: string };
   }
 }

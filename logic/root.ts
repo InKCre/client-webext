@@ -1,0 +1,58 @@
+// (Information) Base Root module index
+
+import { BlockForm } from "./block";
+import { RelationForm } from "./relation";
+import { inkcreApi } from "@/logic/storage";
+
+export class ArcForm {
+  constructor(
+    public relation: RelationForm,
+    public to_block: StarGraphForm | null = null,
+    public from_block: StarGraphForm | null = null
+  ) {}
+}
+
+export class StarGraphForm {
+  constructor(
+    public block: BlockForm,
+    public out_relations: ArcForm[] = [],
+    public in_relations: ArcForm[] = []
+  ) {}
+
+  create() {
+    return fetch(new URL("/graph", inkcreApi.value), {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        block: this.block,
+        out_relations: this.out_relations,
+        in_relations: this.in_relations,
+      }),
+    });
+  }
+}
+
+export class Root {
+  constructor() {}
+
+  static async RAG(params: {
+    query: string;
+    retrieve_mode?: string;
+    context_blocks?: string;
+  }): Promise<string> {
+    const url = new URL("/sink/rag", inkcreApi.value);
+    url.searchParams.set("query", encodeURIComponent(params.query));
+    if (params.retrieve_mode) {
+      url.searchParams.set("retrieve_mode", params.retrieve_mode);
+    }
+    if (params.context_blocks) {
+      url.searchParams.set("context_blocks", params.context_blocks);
+    }
+
+    const response = await fetch(url);
+    const result = await response.json();
+    return result.message;
+  }
+}

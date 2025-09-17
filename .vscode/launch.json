@@ -9,7 +9,6 @@
             "request": "launch",
             "name": "Chrome Ext",
             "runtimeArgs": [
-                "--remote-debugging-port=9222",
                 "--load-extension=${workspaceFolder}/extension",
                 "--disable-extensions-except=${workspaceFolder}/extension"
             ],

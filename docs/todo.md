@@ -26,4 +26,5 @@
   - [x] TakingNote 主块链接到选区来源的网页块
 - [ ] 不要在 contentScript 里面进行请求或者至少请求的同时打开 Sidepanel（存在依赖关系就不行）
 - [ ] 为什么 JSON.stringfiy(this) 不行
+- [ ] 一个 Sidepanel 对应一个 Tab （没有打开 Sidepanel 的 Tab 则收起，可以吗？）
 - [ ] 实现块、关系的数据模型定义（基于类）并对接相应的 API （ APIBackend.HTTP ）
