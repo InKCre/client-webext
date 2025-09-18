@@ -6,15 +6,11 @@
     "configurations": [
         {
             "type": "chrome",
-            "request": "launch",
-            "name": "Chrome Ext",
-            "runtimeArgs": [
-                "--load-extension=${workspaceFolder}/extension",
-                "--disable-extensions-except=${workspaceFolder}/extension"
-            ],
-            "webRoot": "${workspaceFolder}/src", // 源码位置
-            "sourceMaps": true,
-            "runtimeExecutable": "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
+            "request": "attach",
+            "name": "Debug Ext",
+            "port": 9222,
+            "webRoot": "${workspaceFolder}", // 源码位置
+            "sourceMaps": true
         }
     ]
 }

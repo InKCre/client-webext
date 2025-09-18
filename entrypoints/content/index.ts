@@ -1,13 +1,13 @@
-import { createApp } from 'vue';
-import App from './App.vue';
-import { setupApp } from '@/logic/common-setup';
+import { createApp } from "vue";
+import App from "./ContentScripts.vue";
+import { setupApp } from "@/logic/common-setup";
 
 export default defineContentScript({
-  matches: ['<all_urls>'],
+  matches: ["<all_urls>"],
   main(ctx) {
     const ui = createIntegratedUi(ctx, {
-      position: 'inline',
-      anchor: 'body',
+      position: "inline",
+      anchor: "body",
       onMount: (container: HTMLElement) => {
         // Create the app and mount it to the UI container
         const app = createApp(App);

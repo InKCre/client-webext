@@ -1,7 +1,7 @@
 <template>
   <div
     v-show="showActionBar"
-    class="fixed z-100 box-border flex gap-2 items-start justify-start overflow-clip px-1.5 py-1 relative rounded-[2px] bg-gray-100 min-w-[60px]"
+    class="fixed z-100 box-border flex gap-2 items-start justify-start overflow-clip px-1.5 py-1 rounded-[2px] bg-gray-100 min-w-[60px]"
     :style="{
       left: actionBarPosition.x + 'px',
       top: actionBarPosition.y + 'px',
@@ -26,8 +26,8 @@
 <script setup lang="ts">
 import { useToggle } from "@vueuse/core";
 import { sendMessage } from "webext-bridge/content-script";
-import explain from "~/public/explain.svg";
-import takingNote from "~/public/taking-note.svg";
+import explain from "~/assets/explain.svg";
+import takingNote from "~/assets/taking-note.svg";
 import { Readability } from "@mozilla/readability";
 
 const [showActionBar, toggleActionBar] = useToggle(false);

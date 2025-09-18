@@ -85,7 +85,7 @@ Shift+Backspace: Delete current arc
 
 ```typescript
 // Import assets with ~/pulic/ prefix
-import logo from "~/public/logo.svg";
+import logo from "~/assets/logo.svg";
 
 // Use in templates
 <img :src="logo" alt="Logo" />
@@ -172,7 +172,7 @@ components/      # Vue components by feature
 logic/          # Data models and business logic
 composables/    # Shared reactive utilities
 styles/         # Global styles and UnoCSS setup
-public/         # Extension manifest assets, static assets (icons, images)
+assets/         # Extension manifest assets, static assets (icons, images)
 ```
 
 Focus on creating interconnected knowledge structures, maintaining the minimalist aesthetic, and ensuring smooth cross-context communication.
