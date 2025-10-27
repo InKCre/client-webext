@@ -45,15 +45,19 @@ pnpm run build:firefox
 ### 打包
 
 ```bash
-# 打包 Chrome 版本
+# 打包 Chrome 版本（ZIP）
 pnpm run zip
+
+# 打包 Chrome 版本（CRX）
+pnpm run crx
 
 # 打包 Firefox 版本
 pnpm run zip:firefox
 ```
 
 打包后的文件位于 `.output/` 目录：
-- `inkcre-{version}-chrome.zip` - Chrome 扩展包
+- `inkcre-{version}-chrome.zip` - Chrome 扩展包（ZIP 格式）
+- `inkcre-{version}-chrome.crx` - Chrome 扩展包（CRX 格式，用于发布）
 - `inkcre-{version}-firefox.zip` - Firefox 扩展包
 - `inkcre-{version}-sources.zip` - 源代码包（仅 Firefox）
 
@@ -88,9 +92,9 @@ pnpm run typecheck
 
 2. GitHub Actions 会自动：
    - 构建 Chrome 和 Firefox 版本
-   - 打包扩展
+   - 打包扩展（ZIP 和 CRX 格式）
    - 创建 GitHub Release
-   - 上传扩展包到 Release
+   - 上传扩展包到 Release（包含 `.zip` 和 `.crx` 文件）
 
 3. 用户可以从 [Releases 页面](https://github.com/InKCre/client-webext/releases) 下载最新版本
 
@@ -98,12 +102,17 @@ pnpm run typecheck
 
 #### Chrome/Edge
 
-1. 从 [Releases](https://github.com/InKCre/client-webext/releases) 下载 `inkcre-*-chrome.zip`
-2. 解压文件
-3. 打开浏览器扩展管理页面（`chrome://extensions/` 或 `edge://extensions/`）
-4. 启用"开发者模式"
-5. 点击"加载已解压的扩展程序"
-6. 选择解压后的文件夹
+1. 从 [Releases](https://github.com/InKCre/client-webext/releases) 下载 `inkcre-*-chrome.zip` 或 `inkcre-*-chrome.crx`
+2. **对于 ZIP 文件**：
+   - 解压文件
+   - 打开浏览器扩展管理页面（`chrome://extensions/` 或 `edge://extensions/`）
+   - 启用"开发者模式"
+   - 点击"加载已解压的扩展程序"
+   - 选择解压后的文件夹
+3. **对于 CRX 文件**：
+   - 打开浏览器扩展管理页面（`chrome://extensions/` 或 `edge://extensions/`）
+   - 将 `.crx` 文件拖放到浏览器窗口中
+   - 确认安装
 
 #### Firefox
 
