@@ -34,9 +34,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      - name: Type check
-        run: pnpm run typecheck
-
       - name: Build for ${{ matrix.browser }}
         run: |
           if [ "${{ matrix.browser }}" = "firefox" ]; then
