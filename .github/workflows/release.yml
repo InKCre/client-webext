@@ -32,9 +32,6 @@ jobs:
       - name: Build and zip Chrome extension
         run: pnpm run zip
 
-      - name: Build and pack Chrome CRX extension
-        run: pnpm run crx
-
       - name: Build and zip Firefox extension
         run: pnpm run zip:firefox
 
@@ -43,7 +40,6 @@ jobs:
         with:
           files: |
             .output/inkcre-*-chrome.zip
-            .output/inkcre-*-chrome.crx
             .output/inkcre-*-firefox.zip
           generate_release_notes: true
           draft: false
