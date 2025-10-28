@@ -1,14 +1,13 @@
-// Knowledge base retrieval tools for InKCre
+// Knowledge base retrieval tools for InKCre using Vercel AI SDK
 
+import { tool } from "ai";
 import { z } from "zod";
 import { Block } from "../block";
-import type { Tool } from "./types";
 
 /**
  * Tool for retrieving relevant blocks from knowledge base using semantic search
  */
-export const knowledgeBaseRetrievalTool: Tool = {
-  name: "retrieve_from_knowledge_base",
+export const knowledgeBaseRetrievalTool = tool({
   description:
     "Search the user's knowledge base for relevant information using semantic similarity. Use this to find related notes, concepts, and previously stored information.",
   parameters: z.object({
@@ -18,11 +17,11 @@ export const knowledgeBaseRetrievalTool: Tool = {
       .optional()
       .describe("Maximum number of results to return (default: 5)"),
   }),
-  execute: async (params: { query: string; num?: number }) => {
+  execute: async ({ query, num }: { query: string; num?: number }) => {
     try {
       const blocks = await Block.fromEmbedding({
-        query: params.query,
-        num: params.num || 5,
+        query,
+        num: num || 5,
         maxDistance: 0.7, // Threshold for semantic similarity
       });
 
@@ -53,14 +52,13 @@ export const knowledgeBaseRetrievalTool: Tool = {
       };
     }
   },
-};
+});
 
 /**
  * Tool for retrieving context-specific blocks from knowledge base
  * Uses a specific block ID as context to find related information
  */
-export const contextualRetrievalTool: Tool = {
-  name: "retrieve_with_context",
+export const contextualRetrievalTool = tool({
   description:
     "Retrieve information from the knowledge base that's related to a specific block/context. Useful when you need information related to a particular page or topic.",
   parameters: z.object({
@@ -74,12 +72,12 @@ export const contextualRetrievalTool: Tool = {
       .optional()
       .describe("Maximum number of results to return (default: 5)"),
   }),
-  execute: async (params: { blockId: number; query?: string; num?: number }) => {
+  execute: async ({ blockId, query, num }: { blockId: number; query?: string; num?: number }) => {
     try {
       const blocks = await Block.fromEmbedding({
-        blockId: params.blockId,
-        query: params.query,
-        num: params.num || 5,
+        blockId,
+        query,
+        num: num || 5,
         maxDistance: 0.7,
       });
 
@@ -110,4 +108,4 @@ export const contextualRetrievalTool: Tool = {
       };
     }
   },
-};
+});
