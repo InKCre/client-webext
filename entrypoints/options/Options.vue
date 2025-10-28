@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import logo from "@/assets/inkcre.svg";
-import { inkcreApi, stopwords } from "@/logic/storage";
+import { inkcreApi, stopwords, openaiApiKey } from "@/logic/storage";
 import "uno.css";
 
 // Computed property to handle stopwords array/string conversion
@@ -34,6 +34,21 @@ const stopwordsText = computed({
             placeholder="https://api.inkcre.com"
           />
         </div>
+
+        <div class="flex items-center space-x-2">
+          <label for="openai-api-key" class="font-medium">OpenAI API Key:</label>
+          <input
+            id="openai-api-key"
+            v-model="openaiApiKey"
+            type="password"
+            class="flex-1 px-2 py-1 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
+            placeholder="sk-..."
+          />
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400">
+          Required for local Explain Agent. Get your API key from
+          <a href="https://platform.openai.com/api-keys" target="_blank" class="text-blue-600 dark:text-blue-400">OpenAI Platform</a>.
+        </p>
 
         <div class="space-y-2">
           <label for="stopwords" class="font-medium block"

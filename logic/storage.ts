@@ -143,3 +143,10 @@ export const DEFAULT_STOPWORDS = [
 // Stopwords storage with default list
 export const { data: stopwords, dataReady: stopwordsReady } =
   useWebExtensionStorage("stopwords", DEFAULT_STOPWORDS);
+
+// OpenAI API key storage for local agent execution
+export const { data: openaiApiKey, dataReady: openaiApiKeyReady } =
+  useWebExtensionStorage(
+    "openai-api-key",
+    import.meta.env.VITE_OPENAI_API_KEY || ""
+  );

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import VueMarkdownRender from "vue-markdown-render";
 import { onMessage, sendMessage } from "webext-bridge/popup";
-import { watch } from "vue";
+import { watch, onMounted } from "vue";
 import Loading from "~/components/common/loading.vue";
-import { Root } from "~/logic/root";
+import { createExplainAgent } from "~/logic/agents";
+import { openaiApiKey } from "~/logic/storage";
 import { ArcForm, StarGraphForm } from "~/logic/root";
 import { Block, BlockForm } from "~/logic/block";
 import { RelationForm } from "~/logic/relation";
@@ -17,6 +18,25 @@ const contextBlockId = ref<number>();
 const pageContent = ref<string>("");
 const pageUrl = ref<string>("");
 const pageBlockCreated = ref<boolean>(false);
+const errorMessage = ref<string>("");
+
+// Initialize the explain agent
+let explainAgent = createExplainAgent();
+
+// Update agent when API key changes
+watch(openaiApiKey, (newKey) => {
+  if (newKey) {
+    explainAgent.setApiKey(newKey);
+    errorMessage.value = "";
+  }
+});
+
+// Set API key on mount if available
+onMounted(() => {
+  if (openaiApiKey.value) {
+    explainAgent.setApiKey(openaiApiKey.value);
+  }
+});
 
 onMessage("set-explain-params", ({ data }) => {
   query.value = data.text;
@@ -59,22 +79,28 @@ watch(query, async (newQuery) => {
 
 const fetchExplanation = async () => {
   isLoading.value = true;
+  errorMessage.value = "";
+  
   try {
-    const params: {
-      query: string;
-      retrieve_mode?: string;
-      context_blocks?: string;
-    } = {
+    // Execute the explain agent with context
+    const result = await explainAgent.execute({
       query: `结合语境，简单明了地解释：${query.value}`,
-      retrieve_mode: "reasoning",
-    };
-    if (contextBlockId.value) {
-      params.context_blocks = contextBlockId.value.toString();
+      pageContent: pageContent.value,
+      pageUrl: pageUrl.value,
+      contextBlockId: contextBlockId.value,
+    });
+
+    if (result.error) {
+      errorMessage.value = result.error;
+      explanation.value = "";
+    } else {
+      explanation.value = result.content;
+      errorMessage.value = "";
     }
-    explanation.value = await Root.RAG(params);
   } catch (error) {
     console.error("Error fetching explanation:", error);
-    explanation.value = "Error fetching explanation.";
+    errorMessage.value = `Error fetching explanation: ${error}`;
+    explanation.value = "";
   } finally {
     isLoading.value = false;
   }
@@ -113,6 +139,12 @@ const saveQuery = (event: Event) => {
       </h1>
     </header>
     <main class="explain-content">
+      <div v-if="errorMessage" class="error-message">
+        <p>{{ errorMessage }}</p>
+        <p v-if="!openaiApiKey" class="config-hint">
+          请在扩展选项中配置 OpenAI API Key。
+        </p>
+      </div>
       <div v-if="isLoading" class="loading-indicator">
         <Loading />
       </div>
@@ -193,6 +225,20 @@ const saveQuery = (event: Event) => {
 
 .explain-content {
   padding: 16px 0;
+}
+
+.error-message {
+  background: #fff;
+  border: 1px solid #ff0000;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #ff0000;
+}
+
+.error-message .config-hint {
+  margin-top: 8px;
+  color: #666;
+  font-size: 0.9em;
 }
 
 .loading-indicator {
