@@ -37,6 +37,12 @@ export class StarGraphForm {
 export class Root {
   constructor() {}
 
+  /**
+   * @deprecated Use the local ExplainAgent instead (logic/agents).
+   * This method calls InKCre Core's RAG API, which should not be used for content generation.
+   * InKCre WebExt wraps InKCre Core (information repository) and should handle
+   * content generation locally using the VoltAgent-based ExplainAgent.
+   */
   static async RAG(params: {
     query: string;
     retrieve_mode?: string;
