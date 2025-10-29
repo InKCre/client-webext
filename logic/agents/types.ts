@@ -11,6 +11,8 @@ export interface AgentResult {
   content: string;
   toolCalls?: ToolCall[];
   error?: string;
+  usedProvider?: string;
+  usedModel?: string;
 }
 
 /**

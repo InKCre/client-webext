@@ -4,10 +4,11 @@ import { onMessage, sendMessage } from "webext-bridge/popup";
 import { watch, onMounted } from "vue";
 import Loading from "~/components/common/loading.vue";
 import { createExplainAgent } from "~/logic/agents";
-import { openaiApiKey } from "~/logic/storage";
+import { llmProviders, defaultLLMProviderIndex, openaiApiKey } from "~/logic/storage";
 import { ArcForm, StarGraphForm } from "~/logic/root";
 import { Block, BlockForm } from "~/logic/block";
 import { RelationForm } from "~/logic/relation";
+import type { LLMProviderConfig } from "~/logic/storage";
 
 const emit = defineEmits<{ activate: [tab: string] }>();
 
@@ -19,22 +20,20 @@ const pageContent = ref<string>("");
 const pageUrl = ref<string>("");
 const pageBlockCreated = ref<boolean>(false);
 const errorMessage = ref<string>("");
+const usedProviderInfo = ref<string>("");
+const selectedProviderIndex = ref<number | undefined>(undefined);
 
 // Initialize the explain agent
-let explainAgent = createExplainAgent();
+const explainAgent = createExplainAgent();
 
-// Update agent when API key changes
-watch(openaiApiKey, (newKey) => {
-  if (newKey) {
-    explainAgent.setApiKey(newKey);
-    errorMessage.value = "";
-  }
-});
-
-// Set API key on mount if available
+// Migrate legacy OpenAI API key to new provider system
 onMounted(() => {
-  if (openaiApiKey.value) {
-    explainAgent.setApiKey(openaiApiKey.value);
+  if (openaiApiKey.value && llmProviders.value[0]) {
+    const openaiProvider = llmProviders.value[0];
+    if (!openaiProvider.apiKey && openaiProvider.provider === "openai") {
+      openaiProvider.apiKey = openaiApiKey.value;
+      llmProviders.value = [...llmProviders.value];
+    }
   }
 });
 
@@ -80,14 +79,17 @@ watch(query, async (newQuery) => {
 const fetchExplanation = async () => {
   isLoading.value = true;
   errorMessage.value = "";
+  usedProviderInfo.value = "";
   
   try {
-    // Execute the explain agent with context
+    // Execute the explain agent with context and providers
     const result = await explainAgent.execute({
       query: `结合语境，简单明了地解释：${query.value}`,
       pageContent: pageContent.value,
       pageUrl: pageUrl.value,
       contextBlockId: contextBlockId.value,
+      providers: llmProviders.value,
+      selectedProviderIndex: selectedProviderIndex.value ?? defaultLLMProviderIndex.value,
     });
 
     if (result.error) {
@@ -96,6 +98,9 @@ const fetchExplanation = async () => {
     } else {
       explanation.value = result.content;
       errorMessage.value = "";
+      if (result.usedProvider && result.usedModel) {
+        usedProviderInfo.value = `${result.usedProvider} (${result.usedModel})`;
+      }
     }
   } catch (error) {
     console.error("Error fetching explanation:", error);
@@ -137,12 +142,33 @@ const saveQuery = (event: Event) => {
           >{{ query }}</span
         >
       </h1>
+      <!-- Model selector -->
+      <div v-if="llmProviders && llmProviders.length > 0" class="model-selector">
+        <label for="model-select" class="model-label">模型:</label>
+        <select 
+          id="model-select" 
+          v-model="selectedProviderIndex" 
+          class="model-select"
+          @change="() => { if (query && explanation) fetchExplanation(); }"
+        >
+          <option :value="undefined">默认 ({{ llmProviders[defaultLLMProviderIndex]?.provider || 'none' }})</option>
+          <option 
+            v-for="(provider, index) in llmProviders" 
+            :key="index" 
+            :value="index"
+            :disabled="!provider.enabled || !provider.apiKey"
+          >
+            {{ provider.provider }} - {{ provider.model }}
+            {{ !provider.enabled ? '(禁用)' : !provider.apiKey ? '(未配置)' : '' }}
+          </option>
+        </select>
+      </div>
     </header>
     <main class="explain-content">
       <div v-if="errorMessage" class="error-message">
         <p>{{ errorMessage }}</p>
-        <p v-if="!openaiApiKey" class="config-hint">
-          请在扩展选项中配置 OpenAI API Key。
+        <p v-if="!llmProviders?.some(p => p.enabled && p.apiKey)" class="config-hint">
+          请在扩展选项中配置至少一个 LLM 提供商的 API Key。
         </p>
       </div>
       <div v-if="isLoading" class="loading-indicator">
@@ -151,6 +177,7 @@ const saveQuery = (event: Event) => {
       <div v-else-if="explanation" class="explanation-text">
         <vue-markdown-render :source="explanation" />
         <div class="action-buttons">
+          <span v-if="usedProviderInfo" class="provider-info">{{ usedProviderInfo }}</span>
           <button v-if="query" @click="retryExplanation" class="retry-button">
             <i class="i-mdi-refresh"></i>
           </button>
@@ -178,7 +205,7 @@ const saveQuery = (event: Event) => {
   font-size: 1.25rem;
   font-weight: normal;
   color: #000;
-  margin: 0;
+  margin: 0 0 8px 0;
 }
 
 .editable-text {
@@ -194,12 +221,46 @@ const saveQuery = (event: Event) => {
   outline: none;
 }
 
+.model-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.model-label {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.model-select {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #000;
+  background: #fff;
+  font-family: "Courier New", monospace;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.model-select:focus {
+  outline: none;
+  border-color: #000;
+  background: #f9f9f9;
+}
+
 .action-buttons {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   align-items: center;
   margin-top: 4px;
+}
+
+.provider-info {
+  font-size: 0.75rem;
+  color: #666;
+  margin-right: auto;
 }
 
 .retry-button {

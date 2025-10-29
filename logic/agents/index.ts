@@ -11,7 +11,7 @@ import {
  * Create an Explain Agent instance using Vercel AI SDK
  * This agent combines page context and knowledge base retrieval to explain selected content
  */
-export function createExplainAgent(apiKey?: string): ExplainAgent {
+export function createExplainAgent(): ExplainAgent {
   const instructions = `You are an intelligent explanation agent integrated into InKCre, a knowledge graph-based note-taking system.
 
 Your role is to provide clear, concise, and context-aware explanations of concepts, terms, or text passages that users select.
@@ -34,5 +34,5 @@ Always aim to be helpful, accurate, and concise.`;
 
   const tools = [knowledgeBaseRetrievalTool, contextualRetrievalTool];
 
-  return new ExplainAgent("explain-agent", instructions, tools, apiKey);
+  return new ExplainAgent("explain-agent", instructions, tools);
 }
