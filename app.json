@@ -1,0 +1,11 @@
+{
+  "name": "InKCre Web Extension Landing Page",
+  "description": "Landing page for InKCre - a knowledge graph-based note-taking and AI-assisted writing browser extension",
+  "repository": "https://github.com/InKCre/client-webext",
+  "keywords": ["flask", "python", "web-extension", "browser-extension"],
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ]
+}
