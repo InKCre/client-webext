@@ -18,9 +18,6 @@ export default defineConfig({
     },
   }),
   webExt: {
-    binaries: {
-      chrome: "/Applications/Helium.app/Contents/MacOS/Helium",
-    },
     chromiumArgs: [
       "--remote-debugging-port=9222",
       "--user-data-dir=./.wxt/chrome-data",

@@ -26,5 +26,6 @@ web-ext.config.ts
 *.sw?
 
 
-pnpm-lock.yaml
 package-lock.json
+
+web-ext.config.ts
