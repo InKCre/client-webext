@@ -8,55 +8,55 @@ import { experimental_createProviderRegistry as createProviderRegistry } from "a
 import type { LLMProviderConfig } from "./storage";
 
 /**
- * Create a provider registry with middleware for API key injection
+ * Create a provider registry with custom provider support
+ * Supports OpenAI, Anthropic, Google, and OpenAI-compatible custom providers
  */
 export function createLLMProviderRegistry(providers: LLMProviderConfig[]) {
-  const registry = createProviderRegistry({});
+  const providerMap: Record<string, any> = {};
 
-  // Register each provider with its API key
+  // Register each provider
   providers.forEach((config) => {
     if (!config.apiKey) return;
 
-    switch (config.provider) {
+    switch (config.type) {
       case "openai":
-        registry.registerProvider({
-          id: "openai",
-          provider: createOpenAI({ apiKey: config.apiKey }),
+        // Use custom baseURL if provided for OpenAI-compatible providers
+        providerMap[config.id] = createOpenAI({
+          apiKey: config.apiKey,
+          ...(config.baseURL && { baseURL: config.baseURL }),
         });
         break;
       case "anthropic":
-        registry.registerProvider({
-          id: "anthropic",
-          provider: createAnthropic({ apiKey: config.apiKey }),
+        providerMap[config.id] = createAnthropic({
+          apiKey: config.apiKey,
         });
         break;
       case "google":
-        registry.registerProvider({
-          id: "google",
-          provider: createGoogleGenerativeAI({ apiKey: config.apiKey }),
+        providerMap[config.id] = createGoogleGenerativeAI({
+          apiKey: config.apiKey,
         });
         break;
     }
   });
 
-  return registry;
+  return createProviderRegistry(providerMap);
 }
 
 /**
- * Parse model string in format "provider:model" and return languageModel
+ * Parse model string in format "providerId:model" and return languageModel
  */
 export function parseModelString(modelString: string, providers: LLMProviderConfig[]) {
-  const [provider, model] = modelString.split(":");
+  const [providerId, model] = modelString.split(":");
   
-  if (!provider || !model) {
-    throw new Error(`Invalid model string format: ${modelString}. Expected "provider:model"`);
+  if (!providerId || !model) {
+    throw new Error(`Invalid model string format: ${modelString}. Expected "providerId:model"`);
   }
 
-  const providerConfig = providers.find((p) => p.provider === provider);
+  const providerConfig = providers.find((p) => p.id === providerId);
   if (!providerConfig || !providerConfig.apiKey) {
-    throw new Error(`Provider ${provider} not configured or missing API key`);
+    throw new Error(`Provider ${providerId} not configured or missing API key`);
   }
 
   const registry = createLLMProviderRegistry(providers);
-  return registry.languageModel(`${provider}:${model}`);
+  return registry.languageModel(`${providerId}:${model}`);
 }

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { llmProviders, selectedModel, defaultModel } from "~/logic/storage";
-import type { LLMProviderConfig } from "~/logic/storage";
 
 const emit = defineEmits<{ change: [] }>();
 
@@ -13,8 +12,8 @@ const availableModels = computed(() => {
     const hasApiKey = provider.apiKey && provider.apiKey.length > 0;
     provider.models.forEach((model) => {
       models.push({
-        value: `${provider.provider}:${model}`,
-        label: `${provider.provider} - ${model}`,
+        value: `${provider.id}:${model}`,
+        label: `${provider.name} - ${model}`,
         disabled: !hasApiKey,
       });
     });
@@ -26,8 +25,8 @@ const availableModels = computed(() => {
 // Check if default model is configured
 const isDefaultConfigured = computed(() => {
   if (!defaultModel.value) return false;
-  const [provider] = defaultModel.value.split(":");
-  const providerConfig = llmProviders.value.find((p) => p.provider === provider);
+  const [providerId] = defaultModel.value.split(":");
+  const providerConfig = llmProviders.value.find((p) => p.id === providerId);
   return providerConfig && providerConfig.apiKey && providerConfig.apiKey.length > 0;
 });
 
