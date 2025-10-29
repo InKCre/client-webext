@@ -2,10 +2,8 @@
 // Uses the same AI SDK that VoltAgent is built on
 
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
-import type { LanguageModel } from "ai";
+import { sendMessage } from "webext-bridge/background";
+import { parseModelString } from "../provider-registry";
 import type { AgentResult, AITool } from "./types";
 import type { LLMProviderConfig } from "../storage";
 
@@ -25,145 +23,103 @@ export class ExplainAgent {
   }
 
   /**
-   * Create a model instance from provider configuration
+   * Get page context from content script
    */
-  private createModel(config: LLMProviderConfig): LanguageModel | null {
-    if (!config.apiKey || !config.enabled) {
-      return null;
-    }
-
+  private async getPageContext(tabId?: number): Promise<{ pageUrl: string; pageContent: string } | null> {
     try {
-      switch (config.provider) {
-        case "openai":
-          return openai(config.model, { apiKey: config.apiKey });
-        case "anthropic":
-          return anthropic(config.model, { apiKey: config.apiKey });
-        case "google":
-          return google(config.model, { apiKey: config.apiKey });
-        default:
-          console.error(`Unknown provider: ${config.provider}`);
-          return null;
-      }
+      // Request page context from content script via webext-bridge
+      const response = await sendMessage(
+        "get-page-context",
+        {},
+        { context: "content-script", tabId }
+      );
+      
+      return response.data as { pageUrl: string; pageContent: string };
     } catch (error) {
-      console.error(`Failed to initialize ${config.provider} model:`, error);
+      console.error("Failed to get page context:", error);
       return null;
     }
   }
 
   /**
-   * Execute the agent with a given query and context
-   * Supports provider selection and automatic fallback
+   * Execute the agent with a given query
+   * Automatically retrieves page context from content script
    */
   async execute(params: {
-    query: string;
-    pageContent?: string;
-    pageUrl?: string;
-    contextBlockId?: number;
+    text: string;
+    modelString: string;
     providers: LLMProviderConfig[];
-    selectedProviderIndex?: number;
+    tabId?: number;
   }): Promise<AgentResult> {
-    const { providers, selectedProviderIndex } = params;
+    const { text, modelString, providers, tabId } = params;
 
-    // Filter enabled providers
-    const enabledProviders = providers.filter((p) => p.enabled && p.apiKey);
-
-    if (enabledProviders.length === 0) {
+    // Get model from registry
+    let model;
+    try {
+      model = parseModelString(modelString, providers);
+    } catch (error: any) {
       return {
         content: "",
-        error: "No LLM providers configured. Please set up at least one provider with an API key in the extension settings.",
+        error: `Failed to initialize model: ${error.message}`,
       };
     }
 
-    // Determine the order to try providers
-    let providersToTry: LLMProviderConfig[];
-    if (selectedProviderIndex !== undefined && providers[selectedProviderIndex]) {
-      // If a specific provider is selected, try it first, then fallback to others
-      const selectedProvider = providers[selectedProviderIndex];
-      if (selectedProvider.enabled && selectedProvider.apiKey) {
-        providersToTry = [
-          selectedProvider,
-          ...enabledProviders.filter((p) => p.provider !== selectedProvider.provider),
-        ];
-      } else {
-        providersToTry = enabledProviders;
-      }
-    } else {
-      // Use enabled providers in order
-      providersToTry = enabledProviders;
-    }
+    // Get page context
+    const pageContext = await this.getPageContext(tabId);
 
-    // Build the context message
+    // Build the query with context
     let contextInfo = "";
-    if (params.pageUrl) {
-      contextInfo += `Current page URL: ${params.pageUrl}\n`;
-    }
-    if (params.pageContent) {
-      // Limit page content to avoid token overflow
-      const truncatedContent = params.pageContent.slice(0, 2000);
-      contextInfo += `\nPage content preview:\n${truncatedContent}\n`;
-    }
-    if (params.contextBlockId) {
-      contextInfo += `\nContext block ID: ${params.contextBlockId}\n`;
+    if (pageContext) {
+      if (pageContext.pageUrl) {
+        contextInfo += `Current page URL: ${pageContext.pageUrl}\n`;
+      }
+      if (pageContext.pageContent) {
+        // Limit page content to avoid token overflow
+        const truncatedContent = pageContext.pageContent.slice(0, 2000);
+        contextInfo += `\nPage content preview:\n${truncatedContent}\n`;
+      }
     }
 
-    // Build the system message
-    const systemMessage = this.instructions;
+    const query = `结合语境，简单明了地解释：${text}`;
     const userMessage = contextInfo
-      ? `${contextInfo}\n\nUser query: ${params.query}`
-      : params.query;
+      ? `${contextInfo}\n\nUser query: ${query}`
+      : query;
 
-    // Try each provider in order
-    const errors: string[] = [];
-    for (const providerConfig of providersToTry) {
-      const model = this.createModel(providerConfig);
-      if (!model) {
-        errors.push(`${providerConfig.provider}: Model creation failed`);
-        continue;
-      }
+    try {
+      // Execute using Vercel AI SDK's generateText
+      const result = await generateText({
+        model,
+        system: this.instructions,
+        messages: [{ role: "user", content: userMessage }],
+        tools: this.tools.reduce((acc, tool) => {
+          acc[tool.name] = tool;
+          return acc;
+        }, {} as Record<string, AITool>),
+        maxSteps: 5,
+      });
 
-      try {
-        console.log(`Trying ${providerConfig.provider} (${providerConfig.model})...`);
-        
-        // Execute using Vercel AI SDK's generateText
-        const result = await generateText({
-          model,
-          system: systemMessage,
-          messages: [{ role: "user", content: userMessage }],
-          tools: this.tools.reduce((acc, tool) => {
-            acc[tool.name] = tool;
-            return acc;
-          }, {} as Record<string, AITool>),
-          maxSteps: 5,
-        });
-
-        console.log(`Success with ${providerConfig.provider}`);
-        
-        return {
-          content: result.text,
-          toolCalls: result.steps
-            ?.flatMap((step) =>
-              step.toolCalls?.map((tc) => ({
-                toolName: tc.toolName,
-                parameters: tc.args,
-                result: tc.result,
-              }))
-            )
-            .filter((tc): tc is NonNullable<typeof tc> => tc !== undefined),
-          usedProvider: providerConfig.provider,
-          usedModel: providerConfig.model,
-        };
-      } catch (error: any) {
-        const errorMsg = `${providerConfig.provider}: ${error.message || error}`;
-        console.error(errorMsg);
-        errors.push(errorMsg);
-        // Continue to try next provider
-      }
+      const [provider, modelName] = modelString.split(":");
+      
+      return {
+        content: result.text,
+        toolCalls: result.steps
+          ?.flatMap((step) =>
+            step.toolCalls?.map((tc) => ({
+              toolName: tc.toolName,
+              parameters: tc.args,
+              result: tc.result,
+            }))
+          )
+          .filter((tc): tc is NonNullable<typeof tc> => tc !== undefined),
+        usedProvider: provider,
+        usedModel: modelName,
+      };
+    } catch (error: any) {
+      console.error("Error in ExplainAgent:", error);
+      return {
+        content: "",
+        error: `Failed to generate explanation: ${error.message || error}`,
+      };
     }
-
-    // All providers failed
-    return {
-      content: "",
-      error: `All providers failed:\n${errors.join("\n")}`,
-    };
   }
 }

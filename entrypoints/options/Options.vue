@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import logo from "@/assets/inkcre.svg";
-import { inkcreApi, stopwords, llmProviders, defaultLLMProviderIndex } from "@/logic/storage";
+import { inkcreApi, stopwords, llmProviders, defaultModel } from "@/logic/storage";
 import type { LLMProviderConfig } from "@/logic/storage";
 import "uno.css";
 
@@ -25,23 +25,29 @@ const getProviderDisplayName = (provider: string) => {
   return names[provider] || provider;
 };
 
-const toggleProvider = (index: number) => {
-  const providers = [...llmProviders.value];
-  providers[index].enabled = !providers[index].enabled;
-  llmProviders.value = providers;
-};
-
 const updateProviderApiKey = (index: number, apiKey: string) => {
   const providers = [...llmProviders.value];
   providers[index].apiKey = apiKey;
   llmProviders.value = providers;
 };
 
-const updateProviderModel = (index: number, model: string) => {
-  const providers = [...llmProviders.value];
-  providers[index].model = model;
-  llmProviders.value = providers;
-};
+// Compute available model options for default selection
+const availableDefaultModels = computed(() => {
+  const models: { value: string; label: string; disabled: boolean }[] = [];
+  
+  llmProviders.value.forEach((provider) => {
+    const hasApiKey = provider.apiKey && provider.apiKey.length > 0;
+    provider.models.forEach((model) => {
+      models.push({
+        value: `${provider.provider}:${model}`,
+        label: `${getProviderDisplayName(provider.provider)} - ${model}`,
+        disabled: !hasApiKey,
+      });
+    });
+  });
+  
+  return models;
+});
 </script>
 
 <template>
@@ -67,38 +73,34 @@ const updateProviderModel = (index: number, model: string) => {
         <div class="space-y-2">
           <h4 class="font-semibold text-base">LLM 提供商配置</h4>
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
-            配置多个 LLM 提供商，Explain Agent 将使用默认模型，失败时自动回退到其他可用模型。
+            配置 LLM 提供商的 API Key。在 Explain 侧边栏可以选择使用哪个模型。
           </p>
 
           <div class="space-y-2">
-            <label for="default-provider" class="font-medium block">默认提供商:</label>
+            <label for="default-model" class="font-medium block">默认模型:</label>
             <select
-              id="default-provider"
-              v-model="defaultLLMProviderIndex"
+              id="default-model"
+              v-model="defaultModel"
               class="w-full px-2 py-1 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
             >
               <option 
-                v-for="(provider, index) in llmProviders" 
-                :key="index" 
-                :value="index"
+                v-for="model in availableDefaultModels" 
+                :key="model.value" 
+                :value="model.value"
+                :disabled="model.disabled"
               >
-                {{ getProviderDisplayName(provider.provider) }} - {{ provider.model }}
+                {{ model.label }}
+                {{ model.disabled ? '(未配置 API Key)' : '' }}
               </option>
             </select>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              在 Explain 侧边栏未手动选择模型时使用此默认模型。
+            </p>
           </div>
 
           <div v-for="(provider, index) in llmProviders" :key="index" class="border border-gray-300 dark:border-gray-600 rounded p-3 space-y-2">
             <div class="flex items-center justify-between">
               <h5 class="font-medium">{{ getProviderDisplayName(provider.provider) }}</h5>
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  :checked="provider.enabled"
-                  @change="toggleProvider(index)"
-                  class="cursor-pointer"
-                />
-                <span class="text-sm">启用</span>
-              </label>
             </div>
 
             <div class="space-y-2">
@@ -115,15 +117,10 @@ const updateProviderModel = (index: number, model: string) => {
               </div>
 
               <div>
-                <label :for="`${provider.provider}-model`" class="text-sm font-medium block">模型:</label>
-                <input
-                  :id="`${provider.provider}-model`"
-                  :value="provider.model"
-                  @input="(e) => updateProviderModel(index, (e.target as HTMLInputElement).value)"
-                  type="text"
-                  class="w-full px-2 py-1 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 text-sm"
-                  :placeholder="provider.model"
-                />
+                <label class="text-sm font-medium block">可用模型:</label>
+                <div class="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                  {{ provider.models.join(', ') }}
+                </div>
               </div>
 
               <p class="text-xs text-gray-500 dark:text-gray-400">

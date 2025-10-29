@@ -1,78 +1,31 @@
 <script setup lang="ts">
 import VueMarkdownRender from "vue-markdown-render";
 import { onMessage, sendMessage } from "webext-bridge/popup";
-import { watch, onMounted } from "vue";
 import Loading from "~/components/common/loading.vue";
+import ProviderPicker from "~/components/common/ProviderPicker.vue";
 import { createExplainAgent } from "~/logic/agents";
-import { llmProviders, defaultLLMProviderIndex, openaiApiKey } from "~/logic/storage";
+import { llmProviders, selectedModel, defaultModel } from "~/logic/storage";
 import { ArcForm, StarGraphForm } from "~/logic/root";
-import { Block, BlockForm } from "~/logic/block";
+import { BlockForm } from "~/logic/block";
 import { RelationForm } from "~/logic/relation";
-import type { LLMProviderConfig } from "~/logic/storage";
 
 const emit = defineEmits<{ activate: [tab: string] }>();
 
 const explanation = ref<string>("");
 const isLoading = ref<boolean>(false);
 const query = ref<string>("");
-const contextBlockId = ref<number>();
-const pageContent = ref<string>("");
-const pageUrl = ref<string>("");
-const pageBlockCreated = ref<boolean>(false);
 const errorMessage = ref<string>("");
 const usedProviderInfo = ref<string>("");
-const selectedProviderIndex = ref<number | undefined>(undefined);
 
 // Initialize the explain agent
 const explainAgent = createExplainAgent();
 
-// Migrate legacy OpenAI API key to new provider system
-onMounted(() => {
-  if (openaiApiKey.value && llmProviders.value[0]) {
-    const openaiProvider = llmProviders.value[0];
-    if (!openaiProvider.apiKey && openaiProvider.provider === "openai") {
-      openaiProvider.apiKey = openaiApiKey.value;
-      llmProviders.value = [...llmProviders.value];
-    }
-  }
-});
-
 onMessage("set-explain-params", ({ data }) => {
   query.value = data.text;
-  pageContent.value = data.pageContent || "";
-  pageUrl.value = data.url || "";
   emit("activate", "explain");
-});
-
-const createPageBlock = async () => {
-  if (!pageContent.value || pageBlockCreated.value) return;
-  const graph = new StarGraphForm(
-    new BlockForm("webpage", pageUrl.value, "url"),
-    [
-      new ArcForm(
-        new RelationForm("text content"),
-        new StarGraphForm(new BlockForm("text", pageContent.value))
-      ),
-    ]
-  );
-  try {
-    const response = await graph.create();
-    const data = await response.json();
-    const pageBlock: Block = data.blocks.find(
-      (item: Block) => item.resolver === "webpage"
-    );
-    contextBlockId.value = pageBlock.id;
-    pageBlockCreated.value = true;
-  } catch (error) {
-    console.error("Error creating page block:", error);
-  }
-};
-
-watch(query, async (newQuery) => {
-  if (newQuery) {
-    createPageBlock().finally(() => {
-      fetchExplanation();
-    });
+  // Trigger explanation when query is set
+  if (query.value) {
+    fetchExplanation();
   }
 });
 
@@ -82,14 +35,18 @@ const fetchExplanation = async () => {
   usedProviderInfo.value = "";
   
   try {
-    // Execute the explain agent with context and providers
+    // Use selected model or fall back to default
+    const modelString = selectedModel.value || defaultModel.value;
+    
+    if (!modelString) {
+      throw new Error("No model selected");
+    }
+
+    // Execute the explain agent
     const result = await explainAgent.execute({
-      query: `结合语境，简单明了地解释：${query.value}`,
-      pageContent: pageContent.value,
-      pageUrl: pageUrl.value,
-      contextBlockId: contextBlockId.value,
+      text: query.value,
+      modelString,
       providers: llmProviders.value,
-      selectedProviderIndex: selectedProviderIndex.value ?? defaultLLMProviderIndex.value,
     });
 
     if (result.error) {
@@ -126,6 +83,17 @@ const saveExplanation = () => {
 const saveQuery = (event: Event) => {
   const newText = (event.target as HTMLElement).innerText.trim();
   query.value = newText;
+  // Auto-fetch when query changes
+  if (newText) {
+    fetchExplanation();
+  }
+};
+
+const handleModelChange = () => {
+  // Re-fetch explanation when model changes
+  if (query.value && explanation.value) {
+    fetchExplanation();
+  }
 };
 </script>
 
@@ -143,31 +111,12 @@ const saveQuery = (event: Event) => {
         >
       </h1>
       <!-- Model selector -->
-      <div v-if="llmProviders && llmProviders.length > 0" class="model-selector">
-        <label for="model-select" class="model-label">模型:</label>
-        <select 
-          id="model-select" 
-          v-model="selectedProviderIndex" 
-          class="model-select"
-          @change="() => { if (query && explanation) fetchExplanation(); }"
-        >
-          <option :value="undefined">默认 ({{ llmProviders[defaultLLMProviderIndex]?.provider || 'none' }})</option>
-          <option 
-            v-for="(provider, index) in llmProviders" 
-            :key="index" 
-            :value="index"
-            :disabled="!provider.enabled || !provider.apiKey"
-          >
-            {{ provider.provider }} - {{ provider.model }}
-            {{ !provider.enabled ? '(禁用)' : !provider.apiKey ? '(未配置)' : '' }}
-          </option>
-        </select>
-      </div>
+      <ProviderPicker @change="handleModelChange" />
     </header>
     <main class="explain-content">
       <div v-if="errorMessage" class="error-message">
         <p>{{ errorMessage }}</p>
-        <p v-if="!llmProviders?.some(p => p.enabled && p.apiKey)" class="config-hint">
+        <p v-if="!llmProviders?.some(p => p.apiKey)" class="config-hint">
           请在扩展选项中配置至少一个 LLM 提供商的 API Key。
         </p>
       </div>
@@ -219,34 +168,6 @@ const saveQuery = (event: Event) => {
   border-color: #000;
   background: #f9f9f9;
   outline: none;
-}
-
-.model-selector {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.model-label {
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.model-select {
-  flex: 1;
-  padding: 4px 8px;
-  border: 1px solid #000;
-  background: #fff;
-  font-family: "Courier New", monospace;
-  font-size: 0.85rem;
-  cursor: pointer;
-}
-
-.model-select:focus {
-  outline: none;
-  border-color: #000;
-  background: #f9f9f9;
 }
 
 .action-buttons {

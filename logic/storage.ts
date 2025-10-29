@@ -148,28 +148,24 @@ export const { data: stopwords, dataReady: stopwordsReady } =
 export interface LLMProviderConfig {
   provider: "openai" | "anthropic" | "google";
   apiKey: string;
-  model: string;
-  enabled: boolean;
+  models: string[]; // List of available models
 }
 
 export const DEFAULT_LLM_PROVIDERS: LLMProviderConfig[] = [
   {
     provider: "openai",
     apiKey: import.meta.env.VITE_OPENAI_API_KEY || "",
-    model: "gpt-4o-mini",
-    enabled: true,
+    models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
   },
   {
     provider: "anthropic",
     apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY || "",
-    model: "claude-3-5-sonnet-20241022",
-    enabled: false,
+    models: ["claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"],
   },
   {
     provider: "google",
     apiKey: import.meta.env.VITE_GOOGLE_API_KEY || "",
-    model: "gemini-2.0-flash-exp",
-    enabled: false,
+    models: ["gemini-2.0-flash-exp", "gemini-1.5-pro", "gemini-1.5-flash"],
   },
 ];
 
@@ -177,13 +173,10 @@ export const DEFAULT_LLM_PROVIDERS: LLMProviderConfig[] = [
 export const { data: llmProviders, dataReady: llmProvidersReady } =
   useWebExtensionStorage("llm-providers", DEFAULT_LLM_PROVIDERS);
 
-// Default LLM provider index
-export const { data: defaultLLMProviderIndex, dataReady: defaultLLMProviderIndexReady } =
-  useWebExtensionStorage("default-llm-provider-index", 0);
+// Selected model string in format "provider:model"
+export const { data: selectedModel, dataReady: selectedModelReady } =
+  useWebExtensionStorage("selected-model", "openai:gpt-4o-mini");
 
-// Legacy OpenAI API key storage (for backward compatibility)
-export const { data: openaiApiKey, dataReady: openaiApiKeyReady } =
-  useWebExtensionStorage(
-    "openai-api-key",
-    import.meta.env.VITE_OPENAI_API_KEY || ""
-  );
+// Default model string in format "provider:model"
+export const { data: defaultModel, dataReady: defaultModelReady } =
+  useWebExtensionStorage("default-model", "openai:gpt-4o-mini");
