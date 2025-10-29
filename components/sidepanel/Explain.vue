@@ -39,7 +39,12 @@ const fetchExplanation = async () => {
     const modelString = selectedModel.value || defaultModel.value;
     
     if (!modelString) {
-      throw new Error("No model selected");
+      throw new Error("请在扩展选项中配置默认模型");
+    }
+
+    // Validate that the model string has the correct format
+    if (!modelString.includes(":")) {
+      throw new Error("模型配置格式错误，请重新配置");
     }
 
     // Execute the explain agent

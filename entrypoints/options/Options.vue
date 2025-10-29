@@ -90,6 +90,29 @@ const availableDefaultModels = computed(() => {
   
   return models;
 });
+
+// Auto-set default model if current default is not valid
+onMounted(() => {
+  // Check if defaultModel is valid
+  if (!defaultModel.value || !defaultModel.value.includes(":")) {
+    // Try to find first configured provider
+    const firstConfiguredModel = availableDefaultModels.value.find(m => !m.disabled);
+    if (firstConfiguredModel) {
+      defaultModel.value = firstConfiguredModel.value;
+    }
+  } else {
+    // Check if current default model is still valid
+    const [providerId] = defaultModel.value.split(":");
+    const provider = llmProviders.value.find(p => p.id === providerId);
+    if (!provider || !provider.apiKey) {
+      // Current default is invalid, try to find a configured one
+      const firstConfiguredModel = availableDefaultModels.value.find(m => !m.disabled);
+      if (firstConfiguredModel) {
+        defaultModel.value = firstConfiguredModel.value;
+      }
+    }
+  }
+});
 </script>
 
 <template>
