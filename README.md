@@ -128,6 +128,25 @@ pnpm run typecheck
 - **存储**: @wxt-dev/storage
 - **通信**: webext-bridge
 
+## Heroku 部署
+
+项目包含一个简单的 Flask 应用，用于提供扩展的落地页。可以部署到 Heroku 上。
+
+详细的部署说明请参考 [HEROKU_DEPLOYMENT.md](HEROKU_DEPLOYMENT.md)。
+
+快速部署：
+
+```bash
+# 登录 Heroku
+heroku login
+
+# 创建应用
+heroku create
+
+# 部署
+git push heroku main
+```
+
 ## 许可证
 
 见 [LICENSE](LICENSE) 文件。
