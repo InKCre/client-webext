@@ -28,5 +28,3 @@ web-ext.config.ts
 
 pnpm-lock.yaml
 package-lock.json
-
-web-ext.config.ts
