@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import VueMarkdownRender from "vue-markdown-render";
 import { onMessage, sendMessage } from "webext-bridge/popup";
-import { watch, onMounted } from "vue";
 import Loading from "~/components/common/loading.vue";
+import ProviderPicker from "~/components/common/ProviderPicker.vue";
 import { createExplainAgent } from "~/logic/agents";
-import { openaiApiKey } from "~/logic/storage";
+import { llmProviders, selectedModel, defaultModel } from "~/logic/storage";
 import { ArcForm, StarGraphForm } from "~/logic/root";
-import { Block, BlockForm } from "~/logic/block";
+import { BlockForm } from "~/logic/block";
 import { RelationForm } from "~/logic/relation";
 
 const emit = defineEmits<{ activate: [tab: string] }>();
@@ -14,80 +14,39 @@ const emit = defineEmits<{ activate: [tab: string] }>();
 const explanation = ref<string>("");
 const isLoading = ref<boolean>(false);
 const query = ref<string>("");
-const contextBlockId = ref<number>();
-const pageContent = ref<string>("");
-const pageUrl = ref<string>("");
-const pageBlockCreated = ref<boolean>(false);
 const errorMessage = ref<string>("");
+const usedProviderInfo = ref<string>("");
 
 // Initialize the explain agent
-let explainAgent = createExplainAgent();
-
-// Update agent when API key changes
-watch(openaiApiKey, (newKey) => {
-  if (newKey) {
-    explainAgent.setApiKey(newKey);
-    errorMessage.value = "";
-  }
-});
-
-// Set API key on mount if available
-onMounted(() => {
-  if (openaiApiKey.value) {
-    explainAgent.setApiKey(openaiApiKey.value);
-  }
-});
+const explainAgent = createExplainAgent();
 
 onMessage("set-explain-params", ({ data }) => {
   query.value = data.text;
-  pageContent.value = data.pageContent || "";
-  pageUrl.value = data.url || "";
   emit("activate", "explain");
-});
-
-const createPageBlock = async () => {
-  if (!pageContent.value || pageBlockCreated.value) return;
-  const graph = new StarGraphForm(
-    new BlockForm("webpage", pageUrl.value, "url"),
-    [
-      new ArcForm(
-        new RelationForm("text content"),
-        new StarGraphForm(new BlockForm("text", pageContent.value))
-      ),
-    ]
-  );
-  try {
-    const response = await graph.create();
-    const data = await response.json();
-    const pageBlock: Block = data.blocks.find(
-      (item: Block) => item.resolver === "webpage"
-    );
-    contextBlockId.value = pageBlock.id;
-    pageBlockCreated.value = true;
-  } catch (error) {
-    console.error("Error creating page block:", error);
-  }
-};
-
-watch(query, async (newQuery) => {
-  if (newQuery) {
-    createPageBlock().finally(() => {
-      fetchExplanation();
-    });
+  // Trigger explanation when query is set
+  if (query.value) {
+    fetchExplanation();
   }
 });
 
 const fetchExplanation = async () => {
   isLoading.value = true;
   errorMessage.value = "";
+  usedProviderInfo.value = "";
   
   try {
-    // Execute the explain agent with context
+    // Use selected model or fall back to default
+    const modelString = selectedModel.value || defaultModel.value;
+    
+    if (!modelString) {
+      throw new Error("No model selected");
+    }
+
+    // Execute the explain agent
     const result = await explainAgent.execute({
-      query: `结合语境，简单明了地解释：${query.value}`,
-      pageContent: pageContent.value,
-      pageUrl: pageUrl.value,
-      contextBlockId: contextBlockId.value,
+      text: query.value,
+      modelString,
+      providers: llmProviders.value,
     });
 
     if (result.error) {
@@ -96,6 +55,9 @@ const fetchExplanation = async () => {
     } else {
       explanation.value = result.content;
       errorMessage.value = "";
+      if (result.usedProvider && result.usedModel) {
+        usedProviderInfo.value = `${result.usedProvider} (${result.usedModel})`;
+      }
     }
   } catch (error) {
     console.error("Error fetching explanation:", error);
@@ -121,6 +83,17 @@ const saveExplanation = () => {
 const saveQuery = (event: Event) => {
   const newText = (event.target as HTMLElement).innerText.trim();
   query.value = newText;
+  // Auto-fetch when query changes
+  if (newText) {
+    fetchExplanation();
+  }
+};
+
+const handleModelChange = () => {
+  // Re-fetch explanation when model changes
+  if (query.value && explanation.value) {
+    fetchExplanation();
+  }
 };
 </script>
 
@@ -137,12 +110,14 @@ const saveQuery = (event: Event) => {
           >{{ query }}</span
         >
       </h1>
+      <!-- Model selector -->
+      <ProviderPicker @change="handleModelChange" />
     </header>
     <main class="explain-content">
       <div v-if="errorMessage" class="error-message">
         <p>{{ errorMessage }}</p>
-        <p v-if="!openaiApiKey" class="config-hint">
-          请在扩展选项中配置 OpenAI API Key。
+        <p v-if="!llmProviders?.some(p => p.apiKey)" class="config-hint">
+          请在扩展选项中配置至少一个 LLM 提供商的 API Key。
         </p>
       </div>
       <div v-if="isLoading" class="loading-indicator">
@@ -151,6 +126,7 @@ const saveQuery = (event: Event) => {
       <div v-else-if="explanation" class="explanation-text">
         <vue-markdown-render :source="explanation" />
         <div class="action-buttons">
+          <span v-if="usedProviderInfo" class="provider-info">{{ usedProviderInfo }}</span>
           <button v-if="query" @click="retryExplanation" class="retry-button">
             <i class="i-mdi-refresh"></i>
           </button>
@@ -178,7 +154,7 @@ const saveQuery = (event: Event) => {
   font-size: 1.25rem;
   font-weight: normal;
   color: #000;
-  margin: 0;
+  margin: 0 0 8px 0;
 }
 
 .editable-text {
@@ -200,6 +176,12 @@ const saveQuery = (event: Event) => {
   gap: 8px;
   align-items: center;
   margin-top: 4px;
+}
+
+.provider-info {
+  font-size: 0.75rem;
+  color: #666;
+  margin-right: auto;
 }
 
 .retry-button {

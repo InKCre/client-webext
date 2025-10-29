@@ -1,25 +1,8 @@
-// Agent framework types inspired by VoltAgent patterns
+// Agent framework types using Vercel AI SDK (browser-compatible)
 
-import { z } from "zod";
+import type { CoreTool } from "ai";
 
-/**
- * Tool definition for agents
- */
-export interface Tool {
-  name: string;
-  description: string;
-  parameters: z.ZodObject<any>;
-  execute: (params: any) => Promise<any>;
-}
-
-/**
- * Agent configuration
- */
-export interface AgentConfig {
-  name: string;
-  instructions: string;
-  tools?: Tool[];
-}
+export type AITool = CoreTool;
 
 /**
  * Agent execution result
@@ -28,6 +11,8 @@ export interface AgentResult {
   content: string;
   toolCalls?: ToolCall[];
   error?: string;
+  usedProvider?: string;
+  usedModel?: string;
 }
 
 /**

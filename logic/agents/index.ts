@@ -1,21 +1,18 @@
-// Explain Agent factory
-// Creates a configured Explain Agent following VoltAgent patterns
+// Explain Agent factory using Vercel AI SDK (browser-compatible)
+// Uses the same AI SDK that VoltAgent is built on
 
 import { ExplainAgent } from "./explain-agent";
 import {
   knowledgeBaseRetrievalTool,
   contextualRetrievalTool,
 } from "./tools";
-import type { AgentConfig } from "./types";
 
 /**
- * Create an Explain Agent instance
- * This agent combines page context, knowledge base retrieval to explain selected content
+ * Create an Explain Agent instance using Vercel AI SDK
+ * This agent combines page context and knowledge base retrieval to explain selected content
  */
-export function createExplainAgent(apiKey?: string): ExplainAgent {
-  const config: AgentConfig = {
-    name: "explain-agent",
-    instructions: `You are an intelligent explanation agent integrated into InKCre, a knowledge graph-based note-taking system.
+export function createExplainAgent(): ExplainAgent {
+  const instructions = `You are an intelligent explanation agent integrated into InKCre, a knowledge graph-based note-taking system.
 
 Your role is to provide clear, concise, and context-aware explanations of concepts, terms, or text passages that users select.
 
@@ -33,9 +30,9 @@ Available capabilities:
 - Context awareness (current page URL and content)
 - General knowledge from your training
 
-Always aim to be helpful, accurate, and concise.`,
-    tools: [knowledgeBaseRetrievalTool, contextualRetrievalTool],
-  };
+Always aim to be helpful, accurate, and concise.`;
 
-  return new ExplainAgent(config, apiKey);
+  const tools = [knowledgeBaseRetrievalTool, contextualRetrievalTool];
+
+  return new ExplainAgent("explain-agent", instructions, tools);
 }

@@ -1,162 +1,118 @@
-// Explain Agent implementation using OpenAI
-// Inspired by VoltAgent patterns but adapted for browser extension context
+// Explain Agent implementation using Vercel AI SDK (browser-compatible)
+// Uses the same AI SDK that VoltAgent is built on
 
-import OpenAI from "openai";
-import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
-import type { AgentConfig, AgentResult, Tool, ToolCall } from "./types";
+import { generateText } from "ai";
+import { sendMessage } from "webext-bridge/background";
+import { parseModelString } from "../provider-registry";
+import type { AgentResult, AITool } from "./types";
+import type { LLMProviderConfig } from "../storage";
 
 export class ExplainAgent {
-  private openai: OpenAI | null = null;
-  private config: AgentConfig;
+  private tools: AITool[];
+  private instructions: string;
+  private name: string;
 
-  constructor(config: AgentConfig, apiKey?: string) {
-    this.config = config;
-    if (apiKey) {
-      this.openai = new OpenAI({
-        apiKey,
-        dangerouslyAllowBrowser: true, // Required for browser context
-      });
+  constructor(
+    name: string,
+    instructions: string,
+    tools: AITool[]
+  ) {
+    this.name = name;
+    this.instructions = instructions;
+    this.tools = tools;
+  }
+
+  /**
+   * Get page context from content script
+   */
+  private async getPageContext(tabId?: number): Promise<{ pageUrl: string; pageContent: string } | null> {
+    try {
+      // Request page context from content script via webext-bridge
+      const response = await sendMessage(
+        "get-page-context",
+        {},
+        { context: "content-script", tabId }
+      );
+      
+      return response.data as { pageUrl: string; pageContent: string };
+    } catch (error) {
+      console.error("Failed to get page context:", error);
+      return null;
     }
   }
 
   /**
-   * Update the OpenAI API key
-   */
-  setApiKey(apiKey: string) {
-    this.openai = new OpenAI({
-      apiKey,
-      dangerouslyAllowBrowser: true,
-    });
-  }
-
-  /**
-   * Execute the agent with a given query and context
+   * Execute the agent with a given query
+   * Automatically retrieves page context from content script
    */
   async execute(params: {
-    query: string;
-    pageContent?: string;
-    pageUrl?: string;
-    contextBlockId?: number;
+    text: string;
+    modelString: string;
+    providers: LLMProviderConfig[];
+    tabId?: number;
   }): Promise<AgentResult> {
-    if (!this.openai) {
+    const { text, modelString, providers, tabId } = params;
+
+    // Get model from registry
+    let model;
+    try {
+      model = parseModelString(modelString, providers);
+    } catch (error: any) {
       return {
         content: "",
-        error: "OpenAI API key not configured. Please set your API key in the extension settings.",
+        error: `Failed to initialize model: ${error.message}`,
       };
     }
 
-    try {
-      // Build the context message
-      let contextInfo = "";
-      if (params.pageUrl) {
-        contextInfo += `Current page URL: ${params.pageUrl}\n`;
+    // Get page context
+    const pageContext = await this.getPageContext(tabId);
+
+    // Build the query with context
+    let contextInfo = "";
+    if (pageContext) {
+      if (pageContext.pageUrl) {
+        contextInfo += `Current page URL: ${pageContext.pageUrl}\n`;
       }
-      if (params.pageContent) {
+      if (pageContext.pageContent) {
         // Limit page content to avoid token overflow
-        const truncatedContent = params.pageContent.slice(0, 2000);
+        const truncatedContent = pageContext.pageContent.slice(0, 2000);
         contextInfo += `\nPage content preview:\n${truncatedContent}\n`;
       }
-      if (params.contextBlockId) {
-        contextInfo += `\nContext block ID: ${params.contextBlockId}\n`;
-      }
+    }
 
-      const messages: ChatCompletionMessageParam[] = [
-        {
-          role: "system",
-          content: this.config.instructions,
-        },
-      ];
+    const query = `结合语境，简单明了地解释：${text}`;
+    const userMessage = contextInfo
+      ? `${contextInfo}\n\nUser query: ${query}`
+      : query;
 
-      if (contextInfo) {
-        messages.push({
-          role: "system",
-          content: `Context information:\n${contextInfo}`,
-        });
-      }
-
-      messages.push({
-        role: "user",
-        content: params.query,
+    try {
+      // Execute using Vercel AI SDK's generateText
+      const result = await generateText({
+        model,
+        system: this.instructions,
+        messages: [{ role: "user", content: userMessage }],
+        tools: this.tools.reduce((acc, tool) => {
+          acc[tool.name] = tool;
+          return acc;
+        }, {} as Record<string, AITool>),
+        maxSteps: 5,
       });
 
-      // Convert tools to OpenAI function format
-      const tools =
-        this.config.tools?.map((tool) => ({
-          type: "function" as const,
-          function: {
-            name: tool.name,
-            description: tool.description,
-            parameters: tool.parameters,
-          },
-        })) || [];
-
-      const toolCalls: ToolCall[] = [];
-      let assistantMessage = "";
-      let continueLoop = true;
-      let maxIterations = 5; // Prevent infinite loops
-
-      while (continueLoop && maxIterations > 0) {
-        maxIterations--;
-
-        const response = await this.openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          messages,
-          tools: tools.length > 0 ? tools : undefined,
-          tool_choice: tools.length > 0 ? "auto" : undefined,
-        });
-
-        const choice = response.choices[0];
-        const message = choice.message;
-
-        // Add assistant message to conversation
-        messages.push(message);
-
-        if (message.tool_calls && message.tool_calls.length > 0) {
-          // Execute tool calls
-          for (const toolCall of message.tool_calls) {
-            const tool = this.config.tools?.find(
-              (t) => t.name === toolCall.function.name
-            );
-
-            if (tool) {
-              try {
-                const params = JSON.parse(toolCall.function.arguments);
-                const result = await tool.execute(params);
-
-                toolCalls.push({
-                  toolName: tool.name,
-                  parameters: params,
-                  result,
-                });
-
-                // Add tool result to messages
-                messages.push({
-                  role: "tool",
-                  tool_call_id: toolCall.id,
-                  content: JSON.stringify(result),
-                });
-              } catch (error) {
-                console.error(`Error executing tool ${tool.name}:`, error);
-                messages.push({
-                  role: "tool",
-                  tool_call_id: toolCall.id,
-                  content: JSON.stringify({
-                    error: `Failed to execute tool: ${error}`,
-                  }),
-                });
-              }
-            }
-          }
-        } else {
-          // No more tool calls, we have the final answer
-          assistantMessage = message.content || "";
-          continueLoop = false;
-        }
-      }
-
+      const [provider, modelName] = modelString.split(":");
+      
       return {
-        content: assistantMessage,
-        toolCalls,
+        content: result.text,
+        toolCalls: result.steps
+          ?.flatMap((step) =>
+            step.toolCalls?.map((tc) => ({
+              toolName: tc.toolName,
+              parameters: tc.args,
+              result: tc.result,
+            }))
+          )
+          .filter((tc): tc is NonNullable<typeof tc> => tc !== undefined),
+        usedProvider: provider,
+        usedModel: modelName,
       };
     } catch (error: any) {
       console.error("Error in ExplainAgent:", error);
