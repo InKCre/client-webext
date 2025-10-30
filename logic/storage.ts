@@ -61,8 +61,9 @@ export const { data: llmProviders, dataReady: llmProvidersReady } =
   useWebExtensionStorage("llm-providers", DEFAULT_LLM_PROVIDERS);
 
 // Selected model string in format "providerId:model"
+// Empty string means use default model
 export const { data: selectedModel, dataReady: selectedModelReady } =
-  useWebExtensionStorage("selected-model", "openai-default:gpt-4o-mini");
+  useWebExtensionStorage("selected-model", "");
 
 // Default model string in format "providerId:model"
 export const { data: defaultModel, dataReady: defaultModelReady } =
