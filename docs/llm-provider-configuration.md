@@ -1,8 +1,16 @@
 # LLM Provider Configuration Guide
 
+> **For Developers**: See [Agent Development Guide](./agent-development-guide.md) | [Architecture Instructions](../.github/instructions/explain-agent.instructions.md)
+
 ## Overview
 
 InKCre WebExt supports multiple LLM providers with flexible configuration. You can add custom providers, configure API endpoints, and manage multiple models from different sources.
+
+**Key Features**:
+- Dynamic provider management (add/remove providers)
+- Support for native APIs (OpenAI, Anthropic, Google)
+- OpenAI-compatible provider type for custom endpoints
+- Local API key storage (never sent to InKCre Core)
 
 ## Supported Provider Types
 
