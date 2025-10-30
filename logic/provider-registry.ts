@@ -4,7 +4,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { experimental_createProviderRegistry as createProviderRegistry } from "ai";
+import { createProviderRegistry } from "ai";
 import type { LLMProviderConfig } from "./storage";
 
 /**
@@ -45,11 +45,16 @@ export function createLLMProviderRegistry(providers: LLMProviderConfig[]) {
 /**
  * Parse model string in format "providerId:model" and return languageModel
  */
-export function parseModelString(modelString: string, providers: LLMProviderConfig[]) {
+export function parseModelString(
+  modelString: string,
+  providers: LLMProviderConfig[],
+) {
   const [providerId, model] = modelString.split(":");
-  
+
   if (!providerId || !model) {
-    throw new Error(`Invalid model string format: ${modelString}. Expected "providerId:model"`);
+    throw new Error(
+      `Invalid model string format: ${modelString}. Expected "providerId:model"`,
+    );
   }
 
   const providerConfig = providers.find((p) => p.id === providerId);
