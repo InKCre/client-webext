@@ -32,7 +32,11 @@ Available capabilities:
 
 Always aim to be helpful, accurate, and concise.`;
 
-  const tools = [knowledgeBaseRetrievalTool, contextualRetrievalTool];
+  // Tools must be passed as object with explicit names for Vercel AI SDK
+  const tools = {
+    search_knowledge_base: knowledgeBaseRetrievalTool,
+    get_contextual_information: contextualRetrievalTool,
+  };
 
   return new ExplainAgent("explain-agent", instructions, tools);
 }

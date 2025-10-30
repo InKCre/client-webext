@@ -4,18 +4,18 @@
 import { generateText } from "ai";
 import { sendMessage } from "webext-bridge/background";
 import { parseModelString } from "../provider-registry";
-import type { AgentResult, AITool } from "./types";
+import type { AgentResult, AITools } from "./types";
 import type { LLMProviderConfig } from "../storage";
 
 export class ExplainAgent {
-  private tools: AITool[];
+  private tools: AITools;
   private instructions: string;
   private name: string;
 
   constructor(
     name: string,
     instructions: string,
-    tools: AITool[]
+    tools: AITools
   ) {
     this.name = name;
     this.instructions = instructions;
@@ -91,10 +91,7 @@ export class ExplainAgent {
         model,
         system: this.instructions,
         messages: [{ role: "user", content: userMessage }],
-        tools: this.tools.reduce((acc, tool) => {
-          acc[tool.name] = tool;
-          return acc;
-        }, {} as Record<string, AITool>),
+        tools: this.tools,
         maxSteps: 5,
       });
 

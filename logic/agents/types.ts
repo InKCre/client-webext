@@ -3,6 +3,7 @@
 import type { CoreTool } from "ai";
 
 export type AITool = CoreTool;
+export type AITools = Record<string, CoreTool>;
 
 /**
  * Agent execution result
