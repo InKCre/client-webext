@@ -17,7 +17,7 @@ export const { data: stopwords, dataReady: stopwordsReady } =
   useWebExtensionStorage("stopwords", DEFAULT_STOPWORDS);
 
 // LLM Provider configuration types
-export type ProviderType = "openai" | "anthropic" | "google";
+export type ProviderType = "openai" | "anthropic" | "google" | "openai-compatible";
 
 export interface LLMProviderConfig {
   id: string; // Unique identifier for the provider

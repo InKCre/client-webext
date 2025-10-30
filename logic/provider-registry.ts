@@ -4,6 +4,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createProviderRegistry } from "ai";
 import type { LLMProviderConfig } from "./storage";
 
@@ -34,6 +35,20 @@ export function createLLMProviderRegistry(providers: LLMProviderConfig[]) {
       case "google":
         providerMap[config.id] = createGoogleGenerativeAI({
           apiKey: config.apiKey,
+        });
+        break;
+      case "openai-compatible":
+        // OpenAI-compatible providers require a baseURL
+        if (!config.baseURL) {
+          console.warn(
+            `OpenAI-compatible provider ${config.id} requires a baseURL`,
+          );
+          return;
+        }
+        providerMap[config.id] = createOpenAICompatible({
+          name: config.name,
+          apiKey: config.apiKey,
+          baseURL: config.baseURL,
         });
         break;
     }

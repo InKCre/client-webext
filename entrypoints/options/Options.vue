@@ -21,6 +21,7 @@ const getProviderTypeDisplayName = (type: ProviderType) => {
     openai: "OpenAI",
     anthropic: "Anthropic",
     google: "Google Generative AI",
+    "openai-compatible": "OpenAI Compatible",
   };
   return names[type];
 };
@@ -30,6 +31,7 @@ const getProviderTypeHelpUrl = (type: ProviderType) => {
     openai: "https://platform.openai.com/api-keys",
     anthropic: "https://console.anthropic.com/settings/keys",
     google: "https://aistudio.google.com/app/apikey",
+    "openai-compatible": "https://ai-sdk.dev/providers/openai-compatible-providers",
   };
   return urls[type];
 };
@@ -199,6 +201,7 @@ onMounted(() => {
                   <option value="openai">{{ getProviderTypeDisplayName('openai') }}</option>
                   <option value="anthropic">{{ getProviderTypeDisplayName('anthropic') }}</option>
                   <option value="google">{{ getProviderTypeDisplayName('google') }}</option>
+                  <option value="openai-compatible">{{ getProviderTypeDisplayName('openai-compatible') }}</option>
                 </select>
               </div>
 
@@ -214,16 +217,30 @@ onMounted(() => {
               </div>
 
               <div>
-                <label class="text-sm font-medium block">Base URL (可选, 用于 OpenAI 兼容的提供商):</label>
+                <label class="text-sm font-medium block">
+                  Base URL 
+                  <span v-if="provider.type === 'openai-compatible'" class="text-red-600">*</span>
+                  <span v-else class="text-gray-500">(可选)</span>:
+                </label>
                 <input
                   :value="provider.baseURL || ''"
                   @input="(e) => updateProvider(index, 'baseURL', (e.target as HTMLInputElement).value || undefined)"
                   type="url"
                   class="w-full px-2 py-1 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 text-sm"
+                  :class="provider.type === 'openai-compatible' && !provider.baseURL ? 'border-red-500' : ''"
                   placeholder="https://api.example.com/v1"
+                  :required="provider.type === 'openai-compatible'"
                 />
                 <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  留空使用默认 API 端点。设置自定义 URL 可使用兼容 OpenAI API 的服务（如 OpenRouter, Together AI 等）。
+                  <span v-if="provider.type === 'openai-compatible'">
+                    必填：OpenAI Compatible 提供商需要指定 Base URL。例如：OpenRouter (https://openrouter.ai/api/v1)、Ollama (http://localhost:11434/v1)、Together AI (https://api.together.xyz/v1)
+                  </span>
+                  <span v-else-if="provider.type === 'openai'">
+                    可选：留空使用 OpenAI 官方端点。设置自定义 URL 可使用其他 OpenAI 兼容的服务。
+                  </span>
+                  <span v-else>
+                    此提供商类型不支持自定义 Base URL。
+                  </span>
                 </p>
               </div>
 

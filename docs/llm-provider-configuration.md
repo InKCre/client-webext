@@ -7,16 +7,22 @@ InKCre WebExt supports multiple LLM providers with flexible configuration. You c
 ## Supported Provider Types
 
 ### Native Providers
-1. **OpenAI** - GPT models
-2. **Anthropic** - Claude models  
-3. **Google Generative AI** - Gemini models
+1. **OpenAI** - GPT models from OpenAI
+2. **Anthropic** - Claude models from Anthropic
+3. **Google Generative AI** - Gemini models from Google
 
-### OpenAI-Compatible Providers
-Any service that implements the OpenAI API format can be configured by setting a custom `baseURL`. Examples:
+### OpenAI-Compatible Provider Type
+4. **OpenAI Compatible** - Dedicated provider type for services implementing OpenAI API format
+
+You can use the **OpenAI Compatible** type for:
 - OpenRouter
 - Together AI
 - Groq
-- Local LLM servers (Ollama, LM Studio, etc.)
+- Ollama (local)
+- LM Studio (local)
+- Any other service with OpenAI-compatible API
+
+**Note**: For native OpenAI, you can also use a custom `baseURL` with the "OpenAI" type to access alternative endpoints.
 
 ## Configuration Structure
 
@@ -26,9 +32,9 @@ Each provider configuration includes:
 {
   id: string;        // Unique identifier (auto-generated)
   name: string;      // Display name
-  type: ProviderType; // "openai" | "anthropic" | "google"
+  type: ProviderType; // "openai" | "anthropic" | "google" | "openai-compatible"
   apiKey: string;    // API key
-  baseURL?: string;  // Optional custom API endpoint
+  baseURL?: string;  // Optional for OpenAI, required for openai-compatible
   models: string[];  // Available model names
 }
 ```
@@ -58,10 +64,10 @@ Base URL: (leave empty)
 Models: gpt-4o, gpt-4o-mini, gpt-4-turbo
 ```
 
-#### OpenRouter (OpenAI-compatible)
+#### OpenRouter
 ```
 Name: OpenRouter
-Type: OpenAI
+Type: OpenAI Compatible
 API Key: sk-or-v1-...
 Base URL: https://openrouter.ai/api/v1
 Models: anthropic/claude-3.5-sonnet, google/gemini-2.0-flash-exp
@@ -70,8 +76,8 @@ Models: anthropic/claude-3.5-sonnet, google/gemini-2.0-flash-exp
 #### Ollama (Local)
 ```
 Name: Ollama Local
-Type: OpenAI
-API Key: (any value, not used)
+Type: OpenAI Compatible
+API Key: ollama
 Base URL: http://localhost:11434/v1
 Models: llama3.2, qwen2.5
 ```
@@ -79,10 +85,19 @@ Models: llama3.2, qwen2.5
 #### Together AI
 ```
 Name: Together AI
-Type: OpenAI
+Type: OpenAI Compatible
 API Key: ...
 Base URL: https://api.together.xyz/v1
 Models: meta-llama/Llama-3.3-70B-Instruct-Turbo
+```
+
+#### Groq
+```
+Name: Groq
+Type: OpenAI Compatible
+API Key: gsk_...
+Base URL: https://api.groq.com/openai/v1
+Models: llama-3.3-70b-versatile, mixtral-8x7b-32768
 ```
 
 ## Removing a Provider
@@ -113,10 +128,17 @@ const model = registry.languageModel("openai-default:gpt-4o-mini");
 
 ## Base URL Support
 
-When a `baseURL` is set, the provider uses it instead of the default API endpoint. This enables:
+### Required for OpenAI Compatible Type
+When using the **OpenAI Compatible** provider type, `baseURL` is **required** and specifies the API endpoint.
 
+### Optional for OpenAI Type
+When using the **OpenAI** provider type, `baseURL` is optional:
+- Leave empty to use OpenAI's official endpoint
+- Set a custom URL to use alternative OpenAI-compatible services
+
+Base URL support enables:
 1. **OpenAI-compatible services**: Any service implementing OpenAI API format
-2. **Self-hosted models**: Local LLM servers
+2. **Self-hosted models**: Local LLM servers (Ollama, LM Studio)
 3. **Proxy/gateway services**: Custom routing or rate limiting
 4. **Regional endpoints**: Use region-specific API endpoints
 
@@ -163,14 +185,28 @@ Examples:
 
 ## Advanced: Custom Provider Setup
 
-For maximum flexibility, you can configure OpenAI-compatible providers to access any LLM service:
+### Using OpenAI Compatible Type
+For services that implement the OpenAI API format, use the dedicated **OpenAI Compatible** type:
 
 ```
-Name: Custom LLM
+Name: Custom LLM Service
+Type: OpenAI Compatible
+API Key: your-api-key
+Base URL: https://your-service.com/v1
+Models: your-model-1, your-model-2
+```
+
+This uses the `@ai-sdk/openai-compatible` provider specifically designed for OpenAI-compatible services.
+
+### Alternative: OpenAI Type with Custom Base URL
+You can also use the **OpenAI** type with a custom `baseURL`:
+
+```
+Name: Custom Endpoint
 Type: OpenAI  
 API Key: your-api-key
 Base URL: https://your-service.com/v1
 Models: your-model-1, your-model-2
 ```
 
-The system will use OpenAI SDK with your custom configuration, enabling compatibility with diverse LLM services.
+Both approaches work with OpenAI-compatible services, but the **OpenAI Compatible** type is more explicit and recommended for non-OpenAI services.

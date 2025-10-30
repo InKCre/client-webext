@@ -12,9 +12,9 @@ LLM providers are stored as an array of `LLMProviderConfig` objects:
 interface LLMProviderConfig {
   id: string;         // Unique identifier (auto-generated timestamp-based)
   name: string;       // Display name for user identification
-  type: ProviderType; // "openai" | "anthropic" | "google"
+  type: ProviderType; // "openai" | "anthropic" | "google" | "openai-compatible"
   apiKey: string;     // Provider API key
-  baseURL?: string;   // Optional custom endpoint for OpenAI-compatible providers
+  baseURL?: string;   // Optional for "openai", required for "openai-compatible"
   models: string[];   // List of available model names
 }
 ```
@@ -24,15 +24,18 @@ interface LLMProviderConfig {
 Uses Vercel AI SDK's `experimental_createProviderRegistry`:
 
 1. **Native providers**: OpenAI, Anthropic, Google Generative AI
-2. **Custom providers**: Any OpenAI-compatible endpoint via `baseURL`
-3. **Model access**: Format `{providerId}:{modelName}`
+2. **OpenAI-compatible providers**: Dedicated type using `@ai-sdk/openai-compatible`
+3. **Custom endpoints**: OpenAI type with custom `baseURL` (alternative approach)
+4. **Model access**: Format `{providerId}:{modelName}`
 
 ## Key Implementation Details
 
 ### Provider Registry (`logic/provider-registry.ts`)
 - `createLLMProviderRegistry(providers)`: Creates registry from config array
 - `parseModelString(modelString, providers)`: Converts "id:model" to language model
-- Supports custom baseURL for OpenAI-compatible services
+- Supports "openai-compatible" type using `@ai-sdk/openai-compatible`
+- Supports custom baseURL for OpenAI type (alternative approach)
+- baseURL is required for "openai-compatible" type
 
 ### Storage (`logic/storage.ts`)
 - `llmProviders`: Array of provider configurations
@@ -48,17 +51,17 @@ Uses Vercel AI SDK's `experimental_createProviderRegistry`:
 ## Usage Pattern
 
 ```typescript
-// User adds provider in Options
+// User adds OpenAI Compatible provider in Options
 const newProvider = {
   id: `provider-${Date.now()}`,
   name: "OpenRouter",
-  type: "openai",
+  type: "openai-compatible", // Using dedicated type
   apiKey: "sk-or-v1-...",
-  baseURL: "https://openrouter.ai/api/v1",
+  baseURL: "https://openrouter.ai/api/v1", // Required for this type
   models: ["anthropic/claude-3.5-sonnet"]
 };
 
-// Registry automatically creates provider instance
+// Registry automatically creates provider instance using @ai-sdk/openai-compatible
 const registry = createLLMProviderRegistry([newProvider]);
 
 // Access model
@@ -98,6 +101,9 @@ llmProviders.value = providers;
 ## Notes
 
 - Provider IDs are auto-generated using timestamps to ensure uniqueness
-- baseURL enables OpenRouter, Together AI, Ollama, and other OpenAI-compatible services
+- "openai-compatible" type uses `@ai-sdk/openai-compatible` package
+- baseURL is required for "openai-compatible" type
+- baseURL is optional for "openai" type (enables custom endpoints)
 - Model strings must follow "providerId:modelName" format
 - All provider data stored locally, never sent to InKCre Core
+- Recommended: Use "openai-compatible" type for non-OpenAI services (OpenRouter, Ollama, etc.)
