@@ -4,7 +4,7 @@
 
 import { createProviderRegistry } from "ai";
 import { ProviderFactory } from "./provider-factory";
-import type { LLMProviderConfig } from "./storage";
+import type { LLMProviderConfig } from "../storage";
 
 /**
  * Create a provider registry with custom provider support

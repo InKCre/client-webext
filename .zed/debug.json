@@ -1,0 +1,10 @@
+[
+  {
+    "adapter": "node",
+    "label": "Debug in Chrome",
+    "request": "attach",
+    "port": 9222,
+    "webRoot": "${workspaceFolder}",
+    "sourceMaps": true
+  }
+]

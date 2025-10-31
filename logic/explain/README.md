@@ -1,8 +1,4 @@
----
-applyTo: "logic/explain/**"
----
-
-# Explain Agent Architecture
+# Explain
 
 The Explain Agent is a browser-based AI agent using Vercel AI SDK. It provides intelligent explanations by combining page context from the current tab, user's knowledge base retrieval (InKCre Core), and LLM-powered synthesis.
 

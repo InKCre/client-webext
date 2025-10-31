@@ -5,7 +5,7 @@ import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
-import type { LLMProviderConfig, ProviderType } from "./storage";
+import type { LLMProviderConfig, ProviderType } from "../storage";
 
 /**
  * Interface for provider creation strategy
