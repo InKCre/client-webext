@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import VueMarkdownRender from "vue-markdown-render";
+import { ref, computed, watch, onMounted } from "vue";
 import { onMessage, sendMessage } from "webext-bridge/popup";
 import Loading from "~/components/common/loading.vue";
 import ProviderPicker from "~/components/common/ProviderPicker.vue";
-import { createExplainAgent } from "~/logic/explain";
+import Response from "~/components/ai/Response.vue";
+import { useExplainStream } from "~/composables/useExplainStream";
 import { llmProviders, selectedModel, defaultModel } from "~/logic/storage";
 import { ArcForm, StarGraphForm } from "~/logic/root";
 import { BlockForm } from "~/logic/block";
@@ -12,22 +13,75 @@ import type { AgentState, ToolCall } from "~/logic/explain/types";
 
 const emit = defineEmits<{ activate: [tab: string] }>();
 
-const explanation = ref<string>("");
-const isLoading = ref<boolean>(false);
 const query = ref<string>("");
-const errorMessage = ref<string>("");
-const usedProviderInfo = ref<string>("");
+const pageContext = ref<{ pageUrl?: string; pageContent?: string }>({});
 
-// Agent state tracking
-const agentState = ref<AgentState["status"]>("idle");
-const currentToolCall = ref<{ toolName: string; parameters: any } | undefined>();
-const toolCalls = ref<ToolCall[]>([]);
+// Initialize streaming composable
+let stream: ReturnType<typeof useExplainStream> | null = null;
 
-// Initialize the explain agent
-const explainAgent = createExplainAgent();
+// Direct refs from the stream
+const explanation = ref("");
+const isLoading = ref(false);
+const errorMessage = ref("");
+const usedProviderInfo = ref("");
+
+// Initialize stream when model changes
+const initializeStream = () => {
+    const modelString = selectedModel.value || defaultModel.value;
+
+    if (!modelString) {
+        return;
+    }
+
+    stream = useExplainStream({
+        modelString,
+        providers: llmProviders.value,
+        onError: (error) => {
+            console.error("Streaming error:", error);
+        },
+    });
+
+    // Sync refs
+    explanation.value = stream.content.value;
+    isLoading.value = stream.isLoading.value;
+    errorMessage.value = stream.error.value;
+    usedProviderInfo.value =
+        stream.usedProvider.value && stream.usedModel.value
+            ? `${stream.usedProvider.value} (${stream.usedModel.value})`
+            : "";
+
+    // Watch for changes
+    watch(stream.content, (val) => (explanation.value = val));
+    watch(stream.isLoading, (val) => (isLoading.value = val));
+    watch(stream.error, (val) => (errorMessage.value = val));
+    watch([stream.usedProvider, stream.usedModel], () => {
+        usedProviderInfo.value =
+            stream?.usedProvider.value && stream?.usedModel.value
+                ? `${stream.usedProvider.value} (${stream.usedModel.value})`
+                : "";
+    });
+};
+
+// Initialize on mount
+onMounted(() => {
+    initializeStream();
+});
+
+// Reinitialize when model changes
+watch(
+    [selectedModel, defaultModel, llmProviders],
+    () => {
+        initializeStream();
+    },
+    { deep: true },
+);
 
 onMessage("set-explain-params", ({ data }) => {
     query.value = data.text;
+    pageContext.value = {
+        pageUrl: data.url,
+        pageContent: data.pageContent,
+    };
     emit("activate", "explain");
     // Trigger explanation when query is set
     if (query.value) {
@@ -36,86 +90,51 @@ onMessage("set-explain-params", ({ data }) => {
 });
 
 const fetchExplanation = async () => {
-    isLoading.value = true;
-    errorMessage.value = "";
-    usedProviderInfo.value = "";
-    explanation.value = "";
-    toolCalls.value = [];
-    currentToolCall.value = undefined;
-    agentState.value = "thinking";
+    if (!stream) {
+        initializeStream();
+        if (!stream) {
+            return;
+        }
+    }
+
+    // Validate model configuration
+    const modelString = selectedModel.value || defaultModel.value;
+    if (!modelString) {
+        errorMessage.value = "请在扩展选项中配置默认模型";
+        return;
+    }
+
+    if (!modelString.includes(":")) {
+        errorMessage.value = "模型配置格式错误，请重新配置";
+        return;
+    }
 
     try {
-        // Use selected model or fall back to default
-        const modelString = selectedModel.value || defaultModel.value;
-
-        if (!modelString) {
-            throw new Error("请在扩展选项中配置默认模型");
-        }
-
-        // Validate that the model string has the correct format
-        if (!modelString.includes(":")) {
-            throw new Error("模型配置格式错误，请重新配置");
-        }
-
-        // Execute the explain agent with streaming
-        const result = await explainAgent.executeStream({
-            text: query.value,
-            modelString,
-            providers: llmProviders.value,
-            onUpdate: (state) => {
-                // Update UI state in real-time
-                if (state.status) {
-                    agentState.value = state.status;
-                }
-                if (state.currentToolCall !== undefined) {
-                    currentToolCall.value = state.currentToolCall;
-                }
-                if (state.toolCalls !== undefined) {
-                    toolCalls.value = state.toolCalls;
-                }
-                if (state.content !== undefined) {
-                    explanation.value = state.content;
-                }
-                if (state.error !== undefined) {
-                    errorMessage.value = state.error;
-                }
-            },
-        });
-
-        if (result.error) {
-            errorMessage.value = result.error;
-            agentState.value = "error";
-        } else {
-            explanation.value = result.content;
-            errorMessage.value = "";
-            agentState.value = "complete";
-            if (result.usedProvider && result.usedModel) {
-                usedProviderInfo.value = `${result.usedProvider} (${result.usedModel})`;
-            }
-            if (result.toolCalls) {
-                toolCalls.value = result.toolCalls;
-            }
-        }
+        await stream.explain(query.value, pageContext.value);
     } catch (error) {
         console.error("Error fetching explanation:", error);
-        errorMessage.value = `Error fetching explanation: ${error}`;
-        explanation.value = "";
-        agentState.value = "error";
-    } finally {
-        isLoading.value = false;
     }
 };
 
 const retryExplanation = () => {
-    if (query.value) {
+    if (query.value && stream) {
+        stream.reset();
         fetchExplanation();
+    }
+};
+
+const stopExplanation = () => {
+    if (stream) {
+        stream.stop();
     }
 };
 
 const saveExplanation = () => {
     // FIXME 可能需要提供 context ，或者不能通过消息的方式
     sendMessage("set-sidepanel-mode", { mode: "taking-note" });
-    sendMessage("set-taking-note-params", { text: explanation.value });
+    sendMessage("set-taking-note-params", {
+        text: String(explanation.value || ""),
+    });
 };
 
 const saveQuery = (event: Event) => {
@@ -170,100 +189,36 @@ const safeStringify = (obj: any): string => {
                     请在扩展选项中配置至少一个 LLM 提供商的 API Key。
                 </p>
             </div>
-
-            <!-- Agent State Visualization -->
-            <div v-if="isLoading" class="agent-state-container">
-                <!-- Status Indicator -->
-                <div class="status-indicator">
-                    <div class="status-icon">
-                        <i
-                            v-if="agentState === 'thinking'"
-                            class="i-mdi-brain animate-pulse"
-                        ></i>
-                        <i
-                            v-else-if="agentState === 'calling-tool'"
-                            class="i-mdi-hammer-wrench animate-pulse"
-                        ></i>
-                        <i
-                            v-else-if="agentState === 'generating'"
-                            class="i-mdi-pencil animate-pulse"
-                        ></i>
-                        <i v-else class="i-mdi-cog animate-spin"></i>
-                    </div>
-                    <span class="status-text">
-                        <span v-if="agentState === 'thinking'">思考中...</span>
-                        <span v-else-if="agentState === 'calling-tool'"
-                            >调用工具...</span
-                        >
-                        <span v-else-if="agentState === 'generating'"
-                            >生成回答...</span
-                        >
-                        <span v-else>处理中...</span>
-                    </span>
-                </div>
-
-                <!-- Current Tool Call -->
-                <div
-                    v-if="currentToolCall"
-                    class="current-tool-call"
-                >
-                    <div class="tool-call-header">
-                        <i class="i-mdi-tools"></i>
-                        <span class="tool-name">{{ currentToolCall.toolName }}</span>
-                    </div>
-                    <div class="tool-parameters">
-                        {{ safeStringify(currentToolCall.parameters) }}
-                    </div>
-                </div>
-
-                <!-- Tool Call History -->
-                <div v-if="toolCalls.length > 0" class="tool-calls-history">
-                    <h3 class="history-title">工具调用记录</h3>
-                    <div
-                        v-for="(call, index) in toolCalls"
-                        :key="index"
-                        class="tool-call-item"
-                    >
-                        <div class="tool-call-name">
-                            <i class="i-mdi-check-circle"></i>
-                            {{ call.toolName }}
-                        </div>
-                        <div class="tool-call-result">
-                            {{ typeof call.result === 'object' ? safeStringify(call.result) : call.result }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Streaming or Final Explanation -->
-            <div
-                v-if="explanation"
-                class="explanation-text"
-                :class="{ streaming: isLoading }"
-            >
-                <vue-markdown-render :source="explanation" />
-                <div v-if="!isLoading" class="action-buttons">
+            <div class="explanation-text">
+                <Response :content="explanation" :is-loading="isLoading" />
+                <div v-if="explanation || isLoading" class="action-buttons">
                     <span v-if="usedProviderInfo" class="provider-info">{{
                         usedProviderInfo
                     }}</span>
                     <button
-                        v-if="query"
+                        v-if="isLoading"
+                        @click="stopExplanation"
+                        class="stop-button"
+                        title="Stop generation"
+                    >
+                        <i class="i-mdi-stop"></i>
+                    </button>
+                    <button
+                        v-if="query && !isLoading"
                         @click="retryExplanation"
                         class="retry-button"
+                        title="Retry"
                     >
                         <i class="i-mdi-refresh"></i>
                     </button>
-                    <button @click="saveExplanation" class="save-button">
+                    <button
+                        v-if="explanation && !isLoading"
+                        @click="saveExplanation"
+                        class="save-button"
+                    >
                         保存
                     </button>
                 </div>
-            </div>
-
-            <div
-                v-else-if="!isLoading && !errorMessage"
-                class="no-explanation"
-            >
-                <p>No explanation available.</p>
             </div>
         </main>
     </div>
@@ -313,7 +268,8 @@ const safeStringify = (obj: any): string => {
     margin-right: auto;
 }
 
-.retry-button {
+.retry-button,
+.stop-button {
     background: #fff;
     border: 1px solid #000;
     cursor: pointer;
@@ -323,6 +279,16 @@ const safeStringify = (obj: any): string => {
     justify-content: center;
     width: 24px;
     height: 24px;
+}
+
+.stop-button {
+    border-color: #ff0000;
+    color: #ff0000;
+}
+
+.stop-button:hover {
+    background: #ff0000;
+    color: #fff;
 }
 
 .save-button {
@@ -359,29 +325,6 @@ const safeStringify = (obj: any): string => {
 
 .explanation-text {
     line-height: 1.5;
-    color: #333;
-}
-
-.no-explanation {
-    text-align: center;
-    color: #666;
-}
-
-.explanation-text :deep(p) {
-    margin: 8px 0;
-}
-
-.explanation-text :deep(h1),
-.explanation-text :deep(h2),
-.explanation-text :deep(h3) {
-    color: #000;
-    margin: 12px 0 8px 0;
-}
-
-.explanation-text :deep(code) {
-    background: #f0f0f0;
-    padding: 2px 4px;
-    border-radius: 2px;
 }
 
 /* Agent State Visualization */
@@ -495,7 +438,8 @@ const safeStringify = (obj: any): string => {
 
 /* Animations */
 @keyframes pulse {
-    0%, 100% {
+    0%,
+    100% {
         opacity: 1;
     }
     50% {
