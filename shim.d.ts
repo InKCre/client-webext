@@ -16,7 +16,10 @@ declare module "webext-bridge" {
       pageContent?: string;
     };
     "set-taking-note-params": { text: string };
-    "set-explain-params": { text: string; pageContent: string; url: string };
     "set-sidepanel-params": { mode: string; url: string };
+    "set-explain-params": { text: string; url: string };
+    "set-sidepanel-mode": { mode: string };
+    "get-page-context": ProtocolWithReturn<{}, { pageContent?: string }>;
+    "get-page-content": ProtocolWithReturn<{}, { pageContent?: string }>;
   }
 }
