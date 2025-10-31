@@ -1,10 +1,10 @@
 // Explain Agent factory using Vercel AI SDK (browser-compatible)
 // Uses the same AI SDK that VoltAgent is built on
 
-import { generateText, stepCountIs } from "ai";
+import { generateText, streamText, stepCountIs } from "ai";
 import { sendMessage } from "webext-bridge/background";
 import { parseModelString } from "../ai/provider-registry";
-import type { AgentResult, AITools } from "./types";
+import type { AgentResult, AITools, StreamCallback } from "./types";
 import type { LLMProviderConfig } from "../storage";
 import { knowledgeBaseRetrievalTool, contextualRetrievalTool } from "./tools";
 
@@ -131,6 +131,145 @@ export class ExplainAgent {
       return {
         content: "",
         error: `Failed to generate explanation: ${error.message || error}`,
+      };
+    }
+  }
+
+  /**
+   * Execute the agent with streaming support
+   * Provides real-time updates on tool calls and text generation
+   */
+  async executeStream(params: {
+    text: string;
+    modelString: string;
+    providers: LLMProviderConfig[];
+    tabId?: number;
+    onUpdate: StreamCallback;
+  }): Promise<AgentResult> {
+    const { text, modelString, providers, tabId, onUpdate } = params;
+
+    // Notify start
+    onUpdate({ status: "thinking" });
+
+    // Get model from registry
+    let model;
+    try {
+      model = parseModelString(modelString, providers);
+    } catch (error: any) {
+      const errorMsg = `Failed to initialize model: ${error.message}`;
+      onUpdate({ status: "error", error: errorMsg });
+      return {
+        content: "",
+        error: errorMsg,
+      };
+    }
+
+    // Get page context
+    const pageContext = await this.getPageContext(tabId);
+
+    // Build the query with context
+    let contextInfo = "";
+    if (pageContext) {
+      if (pageContext.pageUrl) {
+        contextInfo += `Current page URL: ${pageContext.pageUrl}\n`;
+      }
+      if (pageContext.pageContent) {
+        // Limit page content to avoid token overflow
+        const truncatedContent = pageContext.pageContent.slice(0, 2000);
+        contextInfo += `\nPage content preview:\n${truncatedContent}\n`;
+      }
+    }
+
+    const query = `结合语境，简单明了地解释：${text}`;
+    const userMessage = contextInfo
+      ? `${contextInfo}\n\nUser query: ${query}`
+      : query;
+
+    try {
+      // Execute using Vercel AI SDK's streamText
+      const result = await streamText({
+        model,
+        system: this.instructions,
+        messages: [{ role: "user", content: userMessage }],
+        tools: this.tools,
+        maxSteps: 5, // Allow up to 5 steps for tool calls and final response
+      });
+
+      const toolCalls: any[] = [];
+      let fullText = "";
+
+      const [provider, modelName] = modelString.split(":");
+
+      // Process the stream
+      for await (const part of result.fullStream) {
+        if (part.type === "step-start") {
+          // Step started, could be tool call or text generation
+          onUpdate({ status: "thinking" });
+        } else if (part.type === "tool-call") {
+          // Tool is being called
+          onUpdate({
+            status: "calling-tool",
+            currentToolCall: {
+              toolName: part.toolName,
+              parameters: part.args,
+            },
+          });
+        } else if (part.type === "tool-result") {
+          // Tool result received
+          toolCalls.push({
+            toolName: part.toolName,
+            parameters: part.args,
+            result: part.result,
+          });
+          onUpdate({
+            status: "thinking",
+            toolCalls,
+            currentToolCall: undefined,
+          });
+        } else if (part.type === "text-delta") {
+          // Text is being generated
+          fullText += part.textDelta;
+          onUpdate({
+            status: "generating",
+            content: fullText,
+          });
+        } else if (part.type === "finish") {
+          // Generation complete
+          onUpdate({
+            status: "complete",
+            content: fullText,
+            toolCalls,
+          });
+        } else if (part.type === "error") {
+          // Error occurred
+          const errorMsg = `Error during streaming: ${part.error}`;
+          onUpdate({
+            status: "error",
+            error: errorMsg,
+          });
+          return {
+            content: fullText,
+            toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+            error: errorMsg,
+            usedProvider: provider,
+            usedModel: modelName,
+          };
+        }
+      }
+
+      return {
+        content: fullText,
+        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+        usedProvider: provider,
+        usedModel: modelName,
+      };
+    } catch (error: any) {
+      console.error("Error in ExplainAgent streaming:", error);
+      const errorMsg = `Failed to generate explanation: ${error.message || error}`;
+      onUpdate({ status: "error", error: errorMsg });
+      return {
+        content: "",
+        error: errorMsg,
       };
     }
   }
