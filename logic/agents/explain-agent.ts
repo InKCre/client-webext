@@ -1,7 +1,7 @@
 // Explain Agent implementation using Vercel AI SDK (browser-compatible)
 // Uses the same AI SDK that VoltAgent is built on
 
-import { generateText } from "ai";
+import { generateText, stepCountIs } from "ai";
 import { sendMessage } from "webext-bridge/background";
 import { parseModelString } from "../provider-registry";
 import type { AgentResult, AITools } from "./types";
@@ -28,11 +28,16 @@ export class ExplainAgent {
   private async getPageContext(tabId?: number): Promise<{ pageUrl: string; pageContent: string } | null> {
     try {
       // Request page context from content script via webext-bridge
-      const response = await sendMessage(
-        "get-page-context",
-        {},
-        { context: "content-script", tabId }
-      );
+      const options: any = { context: "content-script" };
+      if (tabId !== undefined) {
+        options.tabId = tabId;
+      }
+      
+      const response: any = await sendMessage("get-page-context", {}, options);
+      
+      if (!response || !response.data) {
+        return null;
+      }
       
       return response.data as { pageUrl: string; pageContent: string };
     } catch (error) {
@@ -87,27 +92,37 @@ export class ExplainAgent {
 
     try {
       // Execute using Vercel AI SDK's generateText
+      // Use stopWhen to enable multi-step execution (default is stepCountIs(1))
       const result = await generateText({
         model,
         system: this.instructions,
         messages: [{ role: "user", content: userMessage }],
         tools: this.tools,
-        maxSteps: 5,
+        stopWhen: stepCountIs(5), // Allow up to 5 steps for tool calls and final response
       });
 
       const [provider, modelName] = modelString.split(":");
       
+      // Collect tool calls and results from all steps
+      const toolCallsWithResults = result.steps.flatMap((step) => {
+        // Match tool calls with their results
+        return step.toolCalls.map((tc) => {
+          // Find the corresponding result
+          const toolResult = step.toolResults.find(
+            (tr) => tr.toolCallId === tc.toolCallId
+          );
+          
+          return {
+            toolName: tc.toolName,
+            parameters: tc.input, // Use 'input' property, not 'args'
+            result: toolResult?.output, // Use 'output' property, not 'result'
+          };
+        });
+      });
+      
       return {
         content: result.text,
-        toolCalls: result.steps
-          ?.flatMap((step) =>
-            step.toolCalls?.map((tc) => ({
-              toolName: tc.toolName,
-              parameters: tc.args,
-              result: tc.result,
-            }))
-          )
-          .filter((tc): tc is NonNullable<typeof tc> => tc !== undefined),
+        toolCalls: toolCallsWithResults.length > 0 ? toolCallsWithResults : undefined,
         usedProvider: provider,
         usedModel: modelName,
       };

@@ -17,7 +17,7 @@ export const knowledgeBaseRetrievalTool = tool({
       .optional()
       .describe("Maximum number of results to return (default: 5)"),
   }),
-  execute: async ({ query, num }: { query: string; num?: number }) => {
+  execute: async ({ query, num }) => {
     try {
       const blocks = await Block.fromEmbedding({
         query,
@@ -72,7 +72,7 @@ export const contextualRetrievalTool = tool({
       .optional()
       .describe("Maximum number of results to return (default: 5)"),
   }),
-  execute: async ({ blockId, query, num }: { blockId: number; query?: string; num?: number }) => {
+  execute: async ({ blockId, query, num }) => {
     try {
       const blocks = await Block.fromEmbedding({
         blockId,

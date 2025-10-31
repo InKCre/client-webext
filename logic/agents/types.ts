@@ -1,9 +1,9 @@
 // Agent framework types using Vercel AI SDK (browser-compatible)
 
-import type { CoreTool } from "ai";
+import type { Tool } from "ai";
 
-export type AITool = CoreTool;
-export type AITools = Record<string, CoreTool>;
+export type AITool = Tool;
+export type AITools = Record<string, Tool>;
 
 /**
  * Agent execution result
