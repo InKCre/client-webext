@@ -1,0 +1,257 @@
+.explain-container {
+  padding: 16px;
+  font-family: "Courier New", monospace;
+}
+
+.explain-header {
+  margin-bottom: 16px;
+}
+
+.explain-title {
+  font-size: 1.25rem;
+  font-weight: normal;
+  color: #000;
+  margin: 0 0 8px 0;
+}
+
+.editable-text {
+  border: 1px solid transparent;
+  padding: 2px 4px;
+  border-radius: 2px;
+  cursor: text;
+
+  &:focus {
+    border-color: #000;
+    background: #f9f9f9;
+    outline: none;
+  }
+}
+
+.explain-content {
+  padding: 16px 0;
+}
+
+.error-message {
+  background: #fff;
+  border: 1px solid #ff0000;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #ff0000;
+
+  .config-hint {
+    margin-top: 8px;
+    color: #666;
+    font-size: 0.9em;
+  }
+}
+
+.loading-indicator {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.explanation-text {
+  line-height: 1.5;
+
+  &.streaming {
+    opacity: 0.9;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.provider-info {
+  font-size: 0.75rem;
+  color: #666;
+  margin-right: auto;
+}
+
+.retry-button,
+.stop-button {
+  background: #fff;
+  border: 1px solid #000;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #f0f0f0;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.stop-button {
+  border-color: #ff0000;
+  color: #ff0000;
+
+  &:hover {
+    background: #ff0000;
+    color: #fff;
+  }
+}
+
+.save-button {
+  background: #fff;
+  border: 1px solid #000;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 8px;
+  height: 24px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #000;
+    color: #fff;
+  }
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+/* Agent State Visualization */
+.agent-state-container {
+  border: 1px solid #000;
+  padding: 12px;
+  margin-bottom: 16px;
+  background: #fff;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+}
+
+.status-icon {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.status-text {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.current-tool-call {
+  border: 1px solid #000;
+  padding: 8px;
+  margin-bottom: 12px;
+  background: #fff;
+}
+
+.tool-call-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.tool-name {
+  font-family: "Courier New", monospace;
+}
+
+.tool-parameters {
+  background: #f5f5f5;
+  padding: 6px;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border-left: 2px solid #000;
+}
+
+.tool-calls-history {
+  border-top: 1px solid #e0e0e0;
+  padding-top: 12px;
+}
+
+.history-title {
+  font-size: 12px;
+  font-weight: bold;
+  margin: 0 0 8px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tool-call-item {
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.tool-call-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: #000;
+
+  i {
+    color: #00aa00;
+  }
+}
+
+.tool-call-result {
+  background: #fff;
+  padding: 6px;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  border-left: 2px solid #00aa00;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}

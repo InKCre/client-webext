@@ -1,6 +1,6 @@
 // index of block module
 
-import { inkcreApi } from "./storage";
+import { inkcreApi } from "~/logic/storage";
 
 export class Block {
   /**
@@ -17,7 +17,7 @@ export class Block {
     public content: string,
     public storage: string | null = null,
     public id?: number,
-    public updated_at?: Date
+    public updated_at?: Date,
   ) {}
 
   static async fromEmbedding(params: {
@@ -46,7 +46,7 @@ export class Block {
     const response = await fetch(url.toString());
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch blocks by embedding: ${response.statusText}`
+        `Failed to fetch blocks by embedding: ${response.statusText}`,
       );
     }
     const data: any[] = await response.json();
@@ -57,8 +57,8 @@ export class Block {
           item.content,
           item.storage,
           item.id,
-          item.updated_at
-        )
+          item.updated_at,
+        ),
     );
   }
 }
@@ -67,6 +67,6 @@ export class BlockForm {
   constructor(
     public resolver: string,
     public content: string,
-    public storage: string | null = null
+    public storage: string | null = null,
   ) {}
 }
