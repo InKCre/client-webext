@@ -1,0 +1,89 @@
+.taking-note-container {
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  min-height: 100vh;
+
+  &:focus {
+    outline: none;
+  }
+}
+
+.taking-note-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.main-block-editor {
+  border: 2px solid #d1d5db;
+  transition: border-color 0.3s ease;
+
+  &:focus-within {
+    border-color: #374151;
+  }
+}
+
+.flash-border {
+  animation: flash 0.5s ease-in-out;
+}
+
+@keyframes flash {
+  0% {
+    border-color: #6b7280;
+  }
+  50% {
+    border-color: #ef4444;
+  }
+  100% {
+    border-color: #6b7280;
+  }
+}
+
+.submit-button {
+  width: auto;
+  margin-top: 16px;
+  margin-left: auto;
+  padding: 8px 16px;
+  background: #000;
+  color: #fff;
+  font-family: "Courier New", monospace;
+  font-weight: 500;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: none;
+
+  &:hover {
+    background: #374151;
+    box-shadow: none;
+  }
+
+  &:active {
+    transform: scale(0.98);
+    background: #1f2937;
+  }
+
+  &:focus {
+    outline: 2px solid #000;
+    outline-offset: 2px;
+  }
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.pressed {
+  background-color: #9ca3af !important;
+  transform: scale(0.95);
+  transition: all 0.2s ease;
+}

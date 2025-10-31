@@ -24,3 +24,22 @@ export interface ToolCall {
   parameters: any;
   result: any;
 }
+
+/**
+ * Agent state during streaming execution
+ */
+export interface AgentState {
+  status: "idle" | "thinking" | "calling-tool" | "generating" | "complete" | "error";
+  currentToolCall?: {
+    toolName: string;
+    parameters: any;
+  };
+  toolCalls: ToolCall[];
+  content: string;
+  error?: string;
+}
+
+/**
+ * Callback for streaming updates
+ */
+export type StreamCallback = (state: Partial<AgentState>) => void;
