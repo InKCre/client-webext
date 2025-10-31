@@ -198,7 +198,7 @@ export class ExplainAgent {
       const toolCalls: any[] = [];
       let fullText = "";
 
-      const [provider, modelName] = modelString.split(":");
+      const [provider, modelName] = modelString.split(":", 2);
 
       // Process the stream
       for await (const part of result.fullStream) {

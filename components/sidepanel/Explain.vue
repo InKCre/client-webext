@@ -133,6 +133,15 @@ const handleModelChange = () => {
         fetchExplanation();
     }
 };
+
+// Safe JSON stringification to handle circular references
+const safeStringify = (obj: any): string => {
+    try {
+        return JSON.stringify(obj, null, 2);
+    } catch (error) {
+        return String(obj);
+    }
+};
 </script>
 
 <template>
@@ -203,7 +212,7 @@ const handleModelChange = () => {
                         <span class="tool-name">{{ currentToolCall.toolName }}</span>
                     </div>
                     <div class="tool-parameters">
-                        {{ JSON.stringify(currentToolCall.parameters, null, 2) }}
+                        {{ safeStringify(currentToolCall.parameters) }}
                     </div>
                 </div>
 
@@ -220,7 +229,7 @@ const handleModelChange = () => {
                             {{ call.toolName }}
                         </div>
                         <div class="tool-call-result">
-                            {{ typeof call.result === 'object' ? JSON.stringify(call.result, null, 2) : call.result }}
+                            {{ typeof call.result === 'object' ? safeStringify(call.result) : call.result }}
                         </div>
                     </div>
                 </div>
