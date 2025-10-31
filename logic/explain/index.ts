@@ -192,7 +192,7 @@ export class ExplainAgent {
         system: this.instructions,
         messages: [{ role: "user", content: userMessage }],
         tools: this.tools,
-        maxSteps: 5, // Allow up to 5 steps for tool calls and final response
+        stopWhen: stepCountIs(5), // Allow up to 5 steps for tool calls and final response
       });
 
       const toolCalls: any[] = [];
@@ -202,24 +202,21 @@ export class ExplainAgent {
 
       // Process the stream
       for await (const part of result.fullStream) {
-        if (part.type === "step-start") {
-          // Step started, could be tool call or text generation
-          onUpdate({ status: "thinking" });
-        } else if (part.type === "tool-call") {
+        if (part.type === "tool-call") {
           // Tool is being called
           onUpdate({
             status: "calling-tool",
             currentToolCall: {
               toolName: part.toolName,
-              parameters: part.args,
+              parameters: part.input,
             },
           });
         } else if (part.type === "tool-result") {
           // Tool result received
           toolCalls.push({
             toolName: part.toolName,
-            parameters: part.args,
-            result: part.result,
+            parameters: part.input,
+            result: part.output,
           });
           onUpdate({
             status: "thinking",
@@ -228,7 +225,7 @@ export class ExplainAgent {
           });
         } else if (part.type === "text-delta") {
           // Text is being generated
-          fullText += part.textDelta;
+          fullText += part.text;
           onUpdate({
             status: "generating",
             content: fullText,
