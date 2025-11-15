@@ -5,30 +5,27 @@ import VueMarkdownRender from "vue-markdown-render";
  * Response Component
  *
  * A component that renders a Markdown response from a large language model.
- * Based on AI SDK Elements response component.
- *
- * @see https://ai-sdk.dev/elements/components/response
  */
 
 interface Props {
-    /**
-     * The markdown content to render
-     */
-    content?: string;
-    /**
-     * Whether the response is currently streaming/loading
-     */
-    isLoading?: boolean;
-    /**
-     * Custom class name for styling
-     */
-    className?: string;
+  /**
+   * The markdown content to render
+   */
+  content?: string;
+  /**
+   * Whether the response is currently streaming/loading
+   */
+  isLoading?: boolean;
+  /**
+   * Custom class name for styling
+   */
+  className?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    content: "",
-    isLoading: false,
-    className: "",
+  content: "",
+  isLoading: false,
+  className: "",
 });
 </script>
 

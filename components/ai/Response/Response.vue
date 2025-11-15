@@ -11,24 +11,24 @@ import VueMarkdownRender from "vue-markdown-render";
  */
 
 interface Props {
-    /**
-     * The markdown content to render
-     */
-    content?: string;
-    /**
-     * Whether the response is currently streaming/loading
-     */
-    isLoading?: boolean;
-    /**
-     * Custom class name for styling
-     */
-    className?: string;
+  /**
+   * The markdown content to render
+   */
+  content?: string;
+  /**
+   * Whether the response is currently streaming/loading
+   */
+  isLoading?: boolean;
+  /**
+   * Custom class name for styling
+   */
+  className?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    content: "",
-    isLoading: false,
-    className: "",
+  content: "",
+  isLoading: false,
+  className: "",
 });
 </script>
 

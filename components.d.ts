@@ -6,17 +6,17 @@
 export {};
 
 /* prettier-ignore */
-declare module 'vue' {
+declare module "vue" {
   export interface GlobalComponents {
-    ActionBar: typeof import('./entrypoints/content/ActionBar.vue')['default']
-    ArcEditor: typeof import('./components/info-base/ArcEditor.vue')['default']
-    ArcsEditor: typeof import('./components/info-base/ArcsEditor.vue')['default']
-    Editor: typeof import('./components/info-base/block/editor.vue')['default']
-    Explain: typeof import('./entrypoints/sidepanel/Explain.vue')['default']
-    Loading: typeof import('./components/common/loading.vue')['default']
-    Logo: typeof import('./components/common/logo.vue')['default']
-    Suggestion: typeof import('./entrypoints/content/Suggestion.vue')['default']
-    TakingNote: typeof import('./entrypoints/sidepanel/TakingNote.vue')['default']
-    WritingAssist: typeof import('./entrypoints/content/WritingAssist.vue')['default']
+    ActionBar: typeof import("./entrypoints/content/ActionBar.vue")["default"];
+    ArcEditor: typeof import("./components/info-base/ArcEditor.vue")["default"];
+    ArcsEditor: typeof import("./components/info-base/ArcsEditor.vue")["default"];
+    Editor: typeof import("./components/info-base/block/editor.vue")["default"];
+    Explain: typeof import("./entrypoints/sidepanel/Explain.vue")["default"];
+    Loading: typeof import("./components/common/loading.vue")["default"];
+    Logo: typeof import("./components/common/logo.vue")["default"];
+    Suggestion: typeof import("./entrypoints/content/Suggestion.vue")["default"];
+    TakingNote: typeof import("./entrypoints/sidepanel/TakingNote.vue")["default"];
+    WritingAssist: typeof import("./entrypoints/content/WritingAssist.vue")["default"];
   }
 }

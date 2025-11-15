@@ -31,8 +31,8 @@ const isLoading = ref(true);
 
 // Simulate loading
 setTimeout(() => {
-    isLoading.value = false;
-    loadingContent.value = "Response loaded successfully!";
+  isLoading.value = false;
+  loadingContent.value = "Response loaded successfully!";
 }, 2000);
 
 // Example 4: Empty state with custom slot
@@ -44,7 +44,7 @@ const isStreaming = ref(true);
 
 // Simulate real streaming behavior
 const simulateStreaming = async () => {
-    const fullText = `# Streaming Response Example
+  const fullText = `# Streaming Response Example
 
 This text will appear **character by character**, just like a real AI response!
 
@@ -59,16 +59,16 @@ The Response component shows a **blinking cursor** at the end of the text while 
 
 Pretty cool, right?`;
 
-    streamingContent.value = "";
-    isStreaming.value = true;
+  streamingContent.value = "";
+  isStreaming.value = true;
 
-    // Stream character by character
-    for (let i = 0; i < fullText.length; i++) {
-        streamingContent.value += fullText[i];
-        await new Promise((resolve) => setTimeout(resolve, 20));
-    }
+  // Stream character by character
+  for (let i = 0; i < fullText.length; i++) {
+    streamingContent.value += fullText[i];
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  }
 
-    isStreaming.value = false;
+  isStreaming.value = false;
 };
 
 // Start streaming on mount

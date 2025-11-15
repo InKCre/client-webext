@@ -101,9 +101,15 @@ const saveQuery = (event: Event) => {
     }
 };
 
-watch(query, () => {
-    fetchExplanation();
-});
+watch(
+    query,
+    () => {
+        if (query.value) {
+            fetchExplanation();
+        }
+    },
+    { immediate: true },
+);
 </script>
 
 <template>

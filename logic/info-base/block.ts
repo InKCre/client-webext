@@ -20,25 +20,34 @@ export class Block {
     public updated_at?: Date,
   ) {}
 
-  static async fromEmbedding(params: {
-    blockId?: number;
+  /**
+   *
+   * @param blockQuery 块作为 query
+   * @pram disatnceThreshold 距离阈值，0~2
+   * @returns
+   */
+  static async vectorSearch(params: {
+    blockQuery?: number;
     query?: string;
     resolver?: string;
-    maxDistance?: number;
+    distanceThreshold?: number;
     num?: number;
   }): Promise<Block[]> {
     const url = new URL("/blocks/query/by_embedding", inkcreApi.value);
     if (params.query !== undefined) {
       url.searchParams.set("query", params.query);
     }
-    if (params.blockId !== undefined) {
-      url.searchParams.set("block_id", params.blockId.toString());
+    if (params.blockQuery !== undefined) {
+      url.searchParams.set("block_id", params.blockQuery.toString());
     }
     if (params.resolver !== undefined) {
       url.searchParams.set("resolver", params.resolver);
     }
-    if (params.maxDistance !== undefined) {
-      url.searchParams.set("max_distance", params.maxDistance.toString());
+    if (params.distanceThreshold !== undefined) {
+      url.searchParams.set(
+        "distance_threshold",
+        params.distanceThreshold.toString(),
+      );
     }
     if (params.num !== undefined) {
       url.searchParams.set("num", params.num.toString());

@@ -1,10 +1,11 @@
 [
   {
-    "adapter": "node",
-    "label": "Debug in Chrome",
+    "label": "Attach to Chrome",
+    "adapter": "chrome",
     "request": "attach",
     "port": 9222,
-    "webRoot": "${workspaceFolder}",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "webRoot": "$ZED_WORKTREE_ROOT",
     "sourceMaps": true
   }
 ]

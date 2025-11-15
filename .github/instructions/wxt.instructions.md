@@ -1,0 +1,1 @@
+- Use browser API by importing it from "wxt/browser".

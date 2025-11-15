@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from "vue";
-import { RelationForm } from "~/logic/info-base/relation";
+import { nextTick, ref, watch } from "vue";
+import type { RelationForm } from "~/logic/info-base/relation";
 
 const props = withDefaults(
-    defineProps<{
-        modelValue: RelationForm;
-        type: "x" | "y";
-    }>(),
-    {
-        type: "x",
-    },
+  defineProps<{
+    modelValue: RelationForm;
+    type: "x" | "y";
+  }>(),
+  {
+    type: "x",
+  },
 );
 
 const editing = ref(false);
 const inputRef = ref<HTMLInputElement>();
 
 function save() {
-    editing.value = false;
+  editing.value = false;
 }
 
 defineExpose({
-    focus: (preventScroll: boolean) => {
-        editing.value = true;
-        nextTick(() => {
-            inputRef.value?.focus({ preventScroll });
-        });
-    },
-    isFocusing: () => inputRef.value === document.activeElement,
+  focus: (preventScroll: boolean) => {
+    editing.value = true;
+    nextTick(() => {
+      inputRef.value?.focus({ preventScroll });
+    });
+  },
+  isFocusing: () => inputRef.value === document.activeElement,
 });
 </script>
 

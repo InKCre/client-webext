@@ -6,7 +6,7 @@ export class Relation {
     public to_: number,
     public content: string,
     public id?: number,
-    public updated_at?: Date
+    public updated_at?: Date,
   ) {}
 }
 
@@ -14,6 +14,6 @@ export class RelationForm {
   constructor(
     public content: string,
     public from_?: number,
-    public to_?: number
+    public to_?: number,
   ) {}
 }

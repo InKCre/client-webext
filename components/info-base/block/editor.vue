@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { BlockForm } from "~/logic/info-base/block";
+import type { BlockForm } from "~/logic/info-base/block";
 
 interface Props {
-    modelValue: BlockForm;
-    placeholder?: string;
-    class?: string;
-    height?: string;
-    borderColor?: string;
+  modelValue: BlockForm;
+  placeholder?: string;
+  class?: string;
+  height?: string;
+  borderColor?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    placeholder: "",
-    class: "",
-    height: "h-32",
-    borderColor: "border-gray-300",
+  placeholder: "",
+  class: "",
+  height: "h-32",
+  borderColor: "border-gray-300",
 });
 
 const textareaRef = ref<HTMLTextAreaElement>();
 
 defineExpose({
-    focus: (preventScroll: boolean) =>
-        textareaRef.value?.focus({ preventScroll }),
-    isFocusing: () => textareaRef.value === document.activeElement,
+  focus: (preventScroll: boolean) =>
+    textareaRef.value?.focus({ preventScroll }),
+  isFocusing: () => textareaRef.value === document.activeElement,
 });
 </script>
 

@@ -1,8 +1,19 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { llmProviders, selectedModel, defaultModel } from "~/logic/storage";
+import { defaultModel, llmProviders } from "~/logic/storage";
 
-const emit = defineEmits<{ change: [] }>();
+const props = withDefaults(defineProps<{ modelValue?: string }>(), {
+    modelValue: () => defaultModel.value,
+});
+
+const emit = defineEmits<{
+    "update:modelValue": [value: string];
+}>();
+
+const localValue = computed({
+    get: () => props.modelValue,
+    set: (value: string) => emit("update:modelValue", value),
+});
 
 // Compute available models from all providers
 const availableModels = computed(() => {
@@ -21,36 +32,12 @@ const availableModels = computed(() => {
 
     return models;
 });
-
-// Check if default model is configured
-const isDefaultConfigured = computed(() => {
-    if (!defaultModel.value) return false;
-    const [providerId] = defaultModel.value.split(":");
-    const providerConfig = llmProviders.value.find((p) => p.id === providerId);
-    return (
-        providerConfig &&
-        providerConfig.apiKey &&
-        providerConfig.apiKey.length > 0
-    );
-});
-
-const handleChange = () => {
-    emit("change");
-};
 </script>
 
 <template>
     <div class="provider-picker">
         <label for="model-select" class="picker-label">模型:</label>
-        <select
-            id="model-select"
-            v-model="selectedModel"
-            class="picker-select"
-            @change="handleChange"
-        >
-            <option value="" :disabled="!isDefaultConfigured">
-                默认 ({{ defaultModel || "none" }})
-            </option>
+        <select id="model-select" v-model="localValue" class="picker-select">
             <option
                 v-for="model in availableModels"
                 :key="model.value"
