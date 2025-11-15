@@ -3,7 +3,14 @@ import { browser } from "wxt/browser";
 
 export default defineBackground(() => {
   onMessage("open-sidepanel", ({ sender }) => {
-    browser.sidePanel?.open({ tabId: sender.tabId });
+    browser.sidePanel?.open({ tabId: sender.tabId }).then(() => {
+      // Notify the content script that sidepanel was opened
+      sendMessage(
+        "sidepanel-opened",
+        undefined,
+        `content-script@${sender.tabId}`,
+      );
+    });
   });
   onMessage("new-task", async (message) => {
     sendMessage("new-task", message.data, "popup");

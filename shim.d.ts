@@ -12,10 +12,15 @@ declare module "webext-bridge" {
       { title?: string }
     >;
     "open-sidepanel": undefined;
+    "sidepanel-opened": undefined;
+    "sidepanel-closed": undefined;
     "set-taking-note-params": { text: string };
     "set-sidepanel-params": { mode: string; url: string };
     "set-explain-params": { text: string; url: string };
     "set-sidepanel-mode": { mode: string };
-    "get-page-content": ProtocolWithReturn<{}, { pageContent?: string }>;
+    "get-page-content": ProtocolWithReturn<
+      Record<string, never>,
+      { pageContent?: string }
+    >;
   }
 }
