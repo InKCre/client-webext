@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { onMessage, sendMessage } from "webext-bridge/popup";
+import { computed, ref, watch } from "vue";
+import { sendMessage } from "webext-bridge/popup";
 import { onNewTask } from "@/logic/task";
 import Response from "~/components/ai/Response/Response.vue";
-import Loading from "~/components/common/loading.vue";
 import ProviderPicker from "~/components/common/ProviderPicker/ProviderPicker.vue";
 import { useExplainAgent } from "~/logic/explain";
 import { defaultModel, llmProviders } from "~/logic/storage";
@@ -12,12 +11,6 @@ const emit = defineEmits<{ activate: [] }>();
 
 const query = ref<string>("");
 const tabId = ref<number>();
-
-onNewTask("explain", (task) => {
-    emit("activate");
-    query.value = task.parameters.selectedText;
-    tabId.value = task.sender.tabId;
-});
 
 // Direct refs
 const explanation = ref("");
@@ -47,23 +40,10 @@ const explainAgent = computed(() => {
 });
 
 const fetchExplanation = async () => {
-    if (!explainAgent.value) {
-        return;
-    }
-
-    // Validate model configuration
-    const modelString = selectedModel.value || defaultModel.value;
-    if (!modelString) {
-        errorMessage.value = "请在扩展选项中配置默认模型";
-        return;
-    }
-
-    if (!modelString.includes(":")) {
-        errorMessage.value = "模型配置格式错误，请重新配置";
-        return;
-    }
-
     try {
+        if (!query.value) {
+            throw new Error("Nothing to explain");
+        }
         // The stream will handle page content retrieval internally
         await explainAgent.value.explain(query.value, tabId.value);
     } catch (error) {
@@ -101,15 +81,15 @@ const saveQuery = (event: Event) => {
     }
 };
 
-watch(
-    query,
-    () => {
-        if (query.value) {
-            fetchExplanation();
-        }
-    },
-    { immediate: true },
-);
+watch(query, fetchExplanation, { immediate: true });
+
+watch(selectedModel, fetchExplanation);
+
+onNewTask("explain", (task) => {
+    emit("activate");
+    query.value = task.parameters.selectedText;
+    tabId.value = task.sender.tabId;
+});
 </script>
 
 <template>
