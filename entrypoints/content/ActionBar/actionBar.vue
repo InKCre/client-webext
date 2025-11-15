@@ -7,36 +7,16 @@
             top: actionBarPosition.y + 'px',
         }"
     >
-        <div
-            class="relative shrink-0 size-5 cursor-pointer"
-            @click="handleTakingNote"
-        >
-            <img
-                alt="Taking Note"
-                class="block max-w-none size-full"
-                :src="takingNote"
-            />
-        </div>
-        <div
-            class="relative shrink-0 size-5 cursor-pointer"
-            @click="handleExplain"
-        >
-            <img
-                alt="Explain"
-                class="block max-w-none size-full"
-                :src="explain"
-            />
-        </div>
+        <NoteAction />
+        <ExplainAction />
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
 import { useToggle } from "@vueuse/core";
-import { sendMessage } from "webext-bridge/content-script";
-import explain from "~/assets/explain.svg";
-import takingNote from "~/assets/taking-note.svg";
-import { Readability } from "@mozilla/readability";
+import { onMounted, onUnmounted, ref } from "vue";
+import ExplainAction from "./explainAction.vue";
+import NoteAction from "./noteAction.vue";
 
 const [showActionBar, toggleActionBar] = useToggle(false);
 const actionBarPosition = ref({ x: 0, y: 0 });
@@ -69,35 +49,6 @@ const handleSelectionChange = () => {
         lastSelectionText.value = "";
     }
 };
-
-function handleTakingNote() {
-    const text = window.getSelection()?.toString() || "";
-    sendMessage("open-sidepanel", {
-        text,
-        mode: "taking-note",
-        url: window.location.href,
-    });
-}
-
-function openExplainSidePanel(selectedText: string, pageContent: string) {
-    const url = window.location.href;
-    sendMessage("open-sidepanel", {
-        text: selectedText,
-        mode: "explain",
-        url,
-        pageContent,
-    });
-}
-
-function handleExplain() {
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) return;
-    const selectedText = selection.toString();
-    const documentClone = document.cloneNode(true) as Document;
-    const article = new Readability(documentClone).parse();
-    const pageContent = article?.textContent || "";
-    openExplainSidePanel(selectedText, pageContent);
-}
 
 onMounted(() => {
     document.addEventListener("mouseup", handleSelection);

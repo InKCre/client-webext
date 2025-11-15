@@ -1,6 +1,6 @@
 import { createApp } from "vue";
-import App from "./ContentScripts.vue";
 import { setupApp } from "@/logic/common-setup";
+import App from "./ContentScripts.vue";
 
 export default defineContentScript({
   matches: ["<all_urls>"],

@@ -1,10 +1,6 @@
-// Provider registry using Vercel AI SDK's provider management
-// https://ai-sdk.dev/docs/ai-sdk-core/provider-management
-// Refactored to follow SOLID principles
-
 import { createProviderRegistry } from "ai";
-import { ProviderFactory } from "./provider-factory";
 import type { LLMProviderConfig } from "../storage";
+import { ProviderFactory } from "./provider-factory";
 
 /**
  * Create a provider registry with custom provider support
@@ -26,26 +22,14 @@ export function createLLMProviderRegistry(providers: LLMProviderConfig[]) {
   return createProviderRegistry(providerMap);
 }
 
-/**
- * Parse model string in format "providerId:model" and return languageModel
- */
 export function parseModelString(
   modelString: string,
-  providers: LLMProviderConfig[],
+  providers?: LLMProviderConfig[],
 ) {
-  const [providerId, model] = modelString.split(":");
-
-  if (!providerId || !model) {
-    throw new Error(
-      `Invalid model string format: ${modelString}. Expected "providerId:model"`,
-    );
+  if (providers && providers.length > 0) {
+    const registry = createLLMProviderRegistry(providers);
+    return registry.languageModel(modelString);
+  } else {
+    return modelString;
   }
-
-  const providerConfig = providers.find((p) => p.id === providerId);
-  if (!providerConfig || !providerConfig.apiKey) {
-    throw new Error(`Provider ${providerId} not configured or missing API key`);
-  }
-
-  const registry = createLLMProviderRegistry(providers);
-  return registry.languageModel(`${providerId}:${model}`);
 }

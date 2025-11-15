@@ -1,39 +1,17 @@
 import { onMessage, sendMessage } from "webext-bridge/background";
+import { browser } from "wxt/browser";
 
 export default defineBackground(() => {
-  onMessage("open-sidepanel", async ({ data, sender }) => {
-    // Open the side panel (Chromium only)
-    try {
-      await (browser as any).sidePanel?.open({ tabId: sender.tabId });
-    } catch (error) {
-      console.error("Failed to open side panel:", error);
+  onMessage("open-sidepanel", ({ sender }) => {
+    browser.sidePanel?.open({ tabId: sender.tabId });
+  });
+  onMessage("new-task", async (message) => {
+    sendMessage("new-task", message.data, "popup");
+  });
+  browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === "get-tab-id") {
+      sendResponse({ tabId: sender.tab?.id });
     }
-    // Wait a bit for the sidepanel to load
-    setTimeout(() => {
-      sendMessage(
-        "set-sidepanel-params",
-        { mode: data.mode, url: data.url },
-        { context: "popup", tabId: sender.tabId }
-      );
-      setTimeout(() => {
-        if (data.mode === "taking-note") {
-          sendMessage(
-            "set-taking-note-params",
-            { text: data.text },
-            { context: "popup", tabId: sender.tabId }
-          );
-        } else if (data.mode === "explain") {
-          sendMessage(
-            "set-explain-params",
-            {
-              text: data.text,
-              pageContent: data.pageContent || "",
-              url: data.url,
-            },
-            { context: "popup", tabId: sender.tabId }
-          );
-        }
-      }, 100);
-    }, 400);
+    return true;
   });
 });

@@ -1,9 +1,9 @@
 // Provider factory following Single Responsibility Principle
 // Each provider type has its own creation logic
 
-import { createOpenAI } from "@ai-sdk/openai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LLMProviderConfig, ProviderType } from "../storage";
 
@@ -26,7 +26,7 @@ export class OpenAIProviderStrategy implements ProviderCreationStrategy {
 
   create(config: LLMProviderConfig): any | null {
     if (!config.apiKey) return null;
-    
+
     return createOpenAI({
       apiKey: config.apiKey,
       ...(config.baseURL && { baseURL: config.baseURL }),
@@ -44,7 +44,7 @@ export class AnthropicProviderStrategy implements ProviderCreationStrategy {
 
   create(config: LLMProviderConfig): any | null {
     if (!config.apiKey) return null;
-    
+
     return createAnthropic({
       apiKey: config.apiKey,
     });
@@ -61,7 +61,7 @@ export class GoogleProviderStrategy implements ProviderCreationStrategy {
 
   create(config: LLMProviderConfig): any | null {
     if (!config.apiKey) return null;
-    
+
     return createGoogleGenerativeAI({
       apiKey: config.apiKey,
     });
@@ -71,7 +71,9 @@ export class GoogleProviderStrategy implements ProviderCreationStrategy {
 /**
  * OpenAI-compatible provider creation strategy
  */
-export class OpenAICompatibleProviderStrategy implements ProviderCreationStrategy {
+export class OpenAICompatibleProviderStrategy
+  implements ProviderCreationStrategy
+{
   canHandle(type: ProviderType): boolean {
     return type === "openai-compatible";
   }
@@ -80,12 +82,12 @@ export class OpenAICompatibleProviderStrategy implements ProviderCreationStrateg
     if (!config.apiKey || !config.baseURL) {
       if (config.apiKey && !config.baseURL) {
         console.warn(
-          `OpenAI-compatible provider ${config.id} requires a baseURL`
+          `OpenAI-compatible provider ${config.id} requires a baseURL`,
         );
       }
       return null;
     }
-    
+
     return createOpenAICompatible({
       name: config.name,
       apiKey: config.apiKey,
@@ -117,7 +119,7 @@ export class ProviderFactory {
    */
   createProvider(config: LLMProviderConfig): any | null {
     const strategy = this.strategies.find((s) => s.canHandle(config.type));
-    
+
     if (!strategy) {
       console.warn(`No strategy found for provider type: ${config.type}`);
       return null;

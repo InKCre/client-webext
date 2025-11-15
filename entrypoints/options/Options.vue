@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import logo from "@/assets/inkcre.svg";
-import { inkcreApi, stopwords, llmProviders, defaultModel } from "@/logic/storage";
 import type { LLMProviderConfig, ProviderType } from "@/logic/storage";
+import {
+  defaultModel,
+  explainInstruction,
+  inkcreApi,
+  llmProviders,
+  stopwords,
+} from "@/logic/storage";
 import "uno.css";
 
 // Computed property to handle stopwords array/string conversion
@@ -31,7 +37,8 @@ const getProviderTypeHelpUrl = (type: ProviderType) => {
     openai: "https://platform.openai.com/api-keys",
     anthropic: "https://console.anthropic.com/settings/keys",
     google: "https://aistudio.google.com/app/apikey",
-    "openai-compatible": "https://ai-sdk.dev/providers/openai-compatible-providers",
+    "openai-compatible":
+      "https://ai-sdk.dev/providers/openai-compatible-providers",
   };
   return urls[type];
 };
@@ -56,7 +63,11 @@ const removeProvider = (index: number) => {
 };
 
 // Update provider field
-const updateProvider = (index: number, field: keyof LLMProviderConfig, value: any) => {
+const updateProvider = (
+  index: number,
+  field: keyof LLMProviderConfig,
+  value: any,
+) => {
   const providers = [...llmProviders.value];
   (providers[index] as any)[field] = value;
   llmProviders.value = providers;
@@ -78,7 +89,7 @@ const setModelsText = (index: number, value: string) => {
 // Compute available model options for default selection
 const availableDefaultModels = computed(() => {
   const models: { value: string; label: string; disabled: boolean }[] = [];
-  
+
   llmProviders.value.forEach((provider) => {
     const hasApiKey = provider.apiKey && provider.apiKey.length > 0;
     provider.models.forEach((model) => {
@@ -89,7 +100,7 @@ const availableDefaultModels = computed(() => {
       });
     });
   });
-  
+
   return models;
 });
 
@@ -98,17 +109,21 @@ onMounted(() => {
   // Check if defaultModel is valid
   if (!defaultModel.value || !defaultModel.value.includes(":")) {
     // Try to find first configured provider
-    const firstConfiguredModel = availableDefaultModels.value.find(m => !m.disabled);
+    const firstConfiguredModel = availableDefaultModels.value.find(
+      (m) => !m.disabled,
+    );
     if (firstConfiguredModel) {
       defaultModel.value = firstConfiguredModel.value;
     }
   } else {
     // Check if current default model is still valid
     const [providerId] = defaultModel.value.split(":");
-    const provider = llmProviders.value.find(p => p.id === providerId);
+    const provider = llmProviders.value.find((p) => p.id === providerId);
     if (!provider || !provider.apiKey) {
       // Current default is invalid, try to find a configured one
-      const firstConfiguredModel = availableDefaultModels.value.find(m => !m.disabled);
+      const firstConfiguredModel = availableDefaultModels.value.find(
+        (m) => !m.disabled,
+      );
       if (firstConfiguredModel) {
         defaultModel.value = firstConfiguredModel.value;
       }
@@ -158,9 +173,9 @@ onMounted(() => {
               v-model="defaultModel"
               class="w-full px-2 py-1 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
             >
-              <option 
-                v-for="model in availableDefaultModels" 
-                :key="model.value" 
+              <option
+                v-for="model in availableDefaultModels"
+                :key="model.value"
                 :value="model.value"
                 :disabled="model.disabled"
               >
@@ -218,7 +233,7 @@ onMounted(() => {
 
               <div>
                 <label class="text-sm font-medium block">
-                  Base URL 
+                  Base URL
                   <span v-if="provider.type === 'openai-compatible'" class="text-red-600">*</span>
                   <span v-else class="text-gray-500">(可选)</span>:
                 </label>
@@ -256,13 +271,27 @@ onMounted(() => {
               </div>
 
               <p class="text-xs text-gray-500 dark:text-gray-400">
-                获取 API key: 
+                获取 API key:
                 <a :href="getProviderTypeHelpUrl(provider.type)" target="_blank" class="text-blue-600 dark:text-blue-400">
                   {{ getProviderTypeDisplayName(provider.type) }}
                 </a>
               </p>
             </div>
           </div>
+        </div>
+
+        <div class="space-y-2">
+          <label for="explain-instruction" class="font-medium block">Explain Instruction:</label>
+          <textarea
+            id="explain-instruction"
+            v-model="explainInstruction"
+            rows="10"
+            class="w-full px-2 py-1 border border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 font-mono text-sm"
+            placeholder="Enter the instruction for the explain agent..."
+          ></textarea>
+          <p class="text-xs text-gray-500 dark:text-gray-400">
+            The system prompt for the explain agent. Changes are saved automatically.
+          </p>
         </div>
 
         <div class="space-y-2">

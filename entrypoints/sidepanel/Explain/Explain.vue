@@ -1,100 +1,54 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { onMessage, sendMessage } from "webext-bridge/popup";
+import { onNewTask } from "@/logic/task";
+import Response from "~/components/ai/Response/Response.vue";
 import Loading from "~/components/common/loading.vue";
 import ProviderPicker from "~/components/common/ProviderPicker/ProviderPicker.vue";
-import Response from "~/components/ai/Response/Response.vue";
-import { useExplainStream } from "~/composables/useExplainStream";
-import { llmProviders, selectedModel, defaultModel } from "~/logic/storage";
-import { ArcForm, StarGraphForm } from "~/logic/info-base/root";
-import { BlockForm } from "~/logic/info-base/block";
-import { RelationForm } from "~/logic/info-base/relation";
-import type { AgentState, ToolCall } from "~/logic/explain/types";
+import { useExplainAgent } from "~/logic/explain";
+import { defaultModel, llmProviders } from "~/logic/storage";
 
-const emit = defineEmits<{ activate: [tab: string] }>();
+const emit = defineEmits<{ activate: [] }>();
 
 const query = ref<string>("");
-const pageContext = ref<{ pageUrl?: string; pageContent?: string }>({});
+const tabId = ref<number>();
 
-// Initialize streaming composable
-let stream: ReturnType<typeof useExplainStream> | null = null;
+onNewTask("explain", (task) => {
+    emit("activate");
+    query.value = task.parameters.selectedText;
+    tabId.value = task.sender.tabId;
+});
 
-// Direct refs from the stream
+// Direct refs
 const explanation = ref("");
 const isLoading = ref(false);
+const isFinished = ref(false);
 const errorMessage = ref("");
-const usedProviderInfo = ref("");
+const selectedModel = ref(defaultModel.value);
 
-// Initialize stream when model changes
-const initializeStream = () => {
-    const modelString = selectedModel.value || defaultModel.value;
-
-    if (!modelString) {
-        return;
-    }
-
-    stream = useExplainStream({
-        modelString,
+const explainAgent = computed(() => {
+    return useExplainAgent({
+        modelString: selectedModel.value,
         providers: llmProviders.value,
+        onUpdate: (update) => {
+            if (update.content !== undefined)
+                explanation.value = update.content;
+            if (update.isLoading !== undefined)
+                isLoading.value = update.isLoading;
+            if (update.error !== undefined) errorMessage.value = update.error;
+        },
         onError: (error) => {
             console.error("Streaming error:", error);
         },
+        onFinish() {
+            isFinished.value = true;
+        },
     });
-
-    // Sync refs
-    explanation.value = stream.content.value;
-    isLoading.value = stream.isLoading.value;
-    errorMessage.value = stream.error.value;
-    usedProviderInfo.value =
-        stream.usedProvider.value && stream.usedModel.value
-            ? `${stream.usedProvider.value} (${stream.usedModel.value})`
-            : "";
-
-    // Watch for changes
-    watch(stream.content, (val) => (explanation.value = val));
-    watch(stream.isLoading, (val) => (isLoading.value = val));
-    watch(stream.error, (val) => (errorMessage.value = val));
-    watch([stream.usedProvider, stream.usedModel], () => {
-        usedProviderInfo.value =
-            stream?.usedProvider.value && stream?.usedModel.value
-                ? `${stream.usedProvider.value} (${stream.usedModel.value})`
-                : "";
-    });
-};
-
-// Initialize on mount
-onMounted(() => {
-    initializeStream();
-});
-
-// Reinitialize when model changes
-watch(
-    [selectedModel, defaultModel, llmProviders],
-    () => {
-        initializeStream();
-    },
-    { deep: true },
-);
-
-onMessage("set-explain-params", ({ data }) => {
-    query.value = data.text;
-    pageContext.value = {
-        pageUrl: data.url,
-        pageContent: data.pageContent,
-    };
-    emit("activate", "explain");
-    // Trigger explanation when query is set
-    if (query.value) {
-        fetchExplanation();
-    }
 });
 
 const fetchExplanation = async () => {
-    if (!stream) {
-        initializeStream();
-        if (!stream) {
-            return;
-        }
+    if (!explainAgent.value) {
+        return;
     }
 
     // Validate model configuration
@@ -110,22 +64,23 @@ const fetchExplanation = async () => {
     }
 
     try {
-        await stream.explain(query.value, pageContext.value);
+        // The stream will handle page content retrieval internally
+        await explainAgent.value.explain(query.value, tabId.value);
     } catch (error) {
         console.error("Error fetching explanation:", error);
     }
 };
 
 const retryExplanation = () => {
-    if (query.value && stream) {
-        stream.reset();
+    if (query.value && explainAgent.value) {
+        explainAgent.value.reset();
         fetchExplanation();
     }
 };
 
 const stopExplanation = () => {
-    if (stream) {
-        stream.stop();
+    if (explainAgent.value) {
+        explainAgent.value.stop();
     }
 };
 
@@ -146,21 +101,9 @@ const saveQuery = (event: Event) => {
     }
 };
 
-const handleModelChange = () => {
-    // Re-fetch explanation when model changes
-    if (query.value && explanation.value) {
-        fetchExplanation();
-    }
-};
-
-// Safe JSON stringification to handle circular references
-const safeStringify = (obj: any): string => {
-    try {
-        return JSON.stringify(obj, null, 2);
-    } catch (error) {
-        return String(obj);
-    }
-};
+watch(query, () => {
+    fetchExplanation();
+});
 </script>
 
 <template>
@@ -177,7 +120,7 @@ const safeStringify = (obj: any): string => {
                 >
             </h1>
             <!-- Model selector -->
-            <ProviderPicker @change="handleModelChange" />
+            <ProviderPicker v-model="selectedModel" />
         </header>
         <main class="explain-content">
             <div v-if="errorMessage" class="error-message">
@@ -189,11 +132,15 @@ const safeStringify = (obj: any): string => {
                     请在扩展选项中配置至少一个 LLM 提供商的 API Key。
                 </p>
             </div>
+            <div v-if="isSummarizingPage" class="status-message">
+                <i class="i-mdi-file-document-outline animate-pulse"></i>
+                正在总结页面内容...
+            </div>
             <div class="explanation-text">
                 <Response :content="explanation" :is-loading="isLoading" />
                 <div v-if="explanation || isLoading" class="action-buttons">
-                    <span v-if="usedProviderInfo" class="provider-info">{{
-                        usedProviderInfo
+                    <span v-if="isFinished" class="provider-info">{{
+                        selectedModel
                     }}</span>
                     <button
                         v-if="isLoading"

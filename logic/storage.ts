@@ -17,7 +17,11 @@ export const { data: stopwords, dataReady: stopwordsReady } =
   useWebExtensionStorage("stopwords", DEFAULT_STOPWORDS);
 
 // LLM Provider configuration types
-export type ProviderType = "openai" | "anthropic" | "google" | "openai-compatible";
+export type ProviderType =
+  | "openai"
+  | "anthropic"
+  | "google"
+  | "openai-compatible";
 
 export interface LLMProviderConfig {
   id: string; // Unique identifier for the provider
@@ -60,11 +64,13 @@ export const DEFAULT_LLM_PROVIDERS: LLMProviderConfig[] = [
 export const { data: llmProviders, dataReady: llmProvidersReady } =
   useWebExtensionStorage("llm-providers", DEFAULT_LLM_PROVIDERS);
 
-// Selected model string in format "providerId:model"
-// Empty string means use default model
-export const { data: selectedModel, dataReady: selectedModelReady } =
-  useWebExtensionStorage("selected-model", "");
-
 // Default model string in format "providerId:model"
 export const { data: defaultModel, dataReady: defaultModelReady } =
   useWebExtensionStorage("default-model", "openai-default:gpt-4o-mini");
+
+// Default explain instruction
+export const DEFAULT_EXPLAIN_INSTRUCTION = `Explain user given text based on page content in a concise, clear, simple way.`;
+
+// Explain instruction storage
+export const { data: explainInstruction, dataReady: explainInstructionReady } =
+  useWebExtensionStorage("explain-instruction", DEFAULT_EXPLAIN_INSTRUCTION);

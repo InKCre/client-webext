@@ -1,16 +1,11 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { onMessage } from "webext-bridge/popup";
-import TakingNote from "./TakingNote/TakingNote.vue";
+import { onNewTask } from "~/logic/task";
 import Explain from "./Explain/Explain.vue";
+import TakingNote from "./TakingNote/TakingNote.vue";
 
 const activeTab = ref("taking-note");
 const url = ref<string>();
-
-onMessage("set-sidepanel-params", ({ data }) => {
-    activeTab.value = data.mode;
-    url.value = data.url;
-});
 </script>
 
 <template>
@@ -39,7 +34,7 @@ onMessage("set-sidepanel-params", ({ data }) => {
             />
             <Explain
                 v-show="activeTab === 'explain'"
-                @activate="activeTab = $event"
+                @activate="activeTab = 'explain'"
             />
         </div>
     </div>

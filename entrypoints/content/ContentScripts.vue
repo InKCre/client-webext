@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import "uno.css";
 import { onMessage } from "webext-bridge/content-script";
-import ActionBar from "./ActionBar.vue";
-import WritingAssist from "./WritingAssist.vue";
+import ActionBar from "./ActionBar";
+import WritingAssist from "./WritingAssist";
+import { Readability } from "@mozilla/readability";
 
-// Handle page context requests
-onMessage("get-page-context", () => {
-    return {
-        pageUrl: window.location.href,
-        pageContent: document.body.innerText || "",
-    };
+onMessage("get-page-content", async () => {
+    const documentClone = document.cloneNode(true) as Document;
+    const article = new Readability(documentClone).parse();
+    const pageContent = article?.textContent || "";
+    return { pageContent };
 });
 </script>
 
