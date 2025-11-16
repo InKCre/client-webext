@@ -17,7 +17,15 @@ export default defineBackground(() => {
   });
   browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "get-tab-id") {
-      sendResponse({ tabId: sender.tab?.id });
+      if (msg.from !== "sidepanel") {
+        sendResponse({ tabId: sender.tab?.id });
+      }
+      else {
+        browser.tabs.query({ active: true, lastFocusedWindow: true }, (tabs) => {
+          const tabId = tabs[0]?.id;
+          sendResponse({ tabId });
+        });
+      }
     }
     return true;
   });

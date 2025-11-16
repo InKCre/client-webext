@@ -19,10 +19,10 @@ export const { data: tasks, dataReady: tasksReady } = useWebExtensionStorage(
   [] as Task[],
 );
 
-type newTaskOptions = { type: string; parameters: Record<string, any> };
-export function newTask({ type, parameters }: newTaskOptions): Promise<Task> {
+type newTaskOptions = { type: string; parameters: Record<string, any>, from?: 'sidepanel' };
+export function newTask({ type, parameters, from }: newTaskOptions): Promise<Task> {
   return new Promise((resolve, reject) => {
-    browser.runtime.sendMessage({ type: "get-tab-id" }, (response) => {
+    browser.runtime.sendMessage({ type: "get-tab-id", from }, (response) => {
       const task: Task = {
         id: crypto.randomUUID(),
         createdAt: new Date(),
@@ -52,7 +52,7 @@ export function newTask({ type, parameters }: newTaskOptions): Promise<Task> {
   });
 }
 
-export function popPendingTask(type: string): Task | undefined {
+export function popPendingTask(type: string, keep: boolean = false): Task | undefined {
   // Find the newest pending task of the given type
   const pendingTasksOfType = tasks.value.filter(
     (task) => task.state === "pending" && task.type === type,
@@ -73,20 +73,30 @@ export function popPendingTask(type: string): Task | undefined {
   const oldestTask = pendingTasksOfType[0];
 
   // Mark as handling
-  oldestTask.state = "handling";
+  if (!keep) {
+    oldestTask.state = "handling";
+  }
 
   return oldestTask;
 }
 
+/**
+ * 
+ * @param type 
+ * @param callback 
+ * @param immediate 
+ * @param keep Pop but keep task state as is
+ */
 export function onNewTask(
   type: string,
   callback: (task: Task) => void,
   immediate: boolean = true,
+  keep: boolean = false,
 ) {
   watch(
     tasks,
     () => {
-      const newTask = popPendingTask(type);
+      const newTask = popPendingTask(type, keep);
       if (newTask) {
         callback(newTask);
       }
