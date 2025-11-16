@@ -2,9 +2,10 @@ import { stepCountIs, streamText } from "ai";
 import { explainInstruction } from "~/logic/storage";
 import { parseModelString } from "../ai/provider-registry";
 import { getPageContent } from "./tools";
-import type { explainAgent, useExplainAgentOptions } from "./types";
+import type { useExplainAgentOptions } from "./types";
 
-export type { explainAgent };
+export { useExplainChat } from "./chat";
+export type { Message, useExplainChatOptions } from "./chat";
 
 export function useExplainAgent(options: useExplainAgentOptions) {
   let content = "";
@@ -87,15 +88,16 @@ export function useExplainAgent(options: useExplainAgentOptions) {
       }
     } catch (err) {
       // Check if it was aborted
-      if (err.name === "AbortError" || err.message?.includes("aborted")) {
+      const errObj = err as any;
+      if (errObj?.name === "AbortError" || errObj?.message?.includes("aborted")) {
         error = "Explanation stopped";
       } else {
         console.error("Error in explain stream:", err);
-        error = `Failed to generate explanation: ${err.message || err}`;
+        error = `Failed to generate explanation: ${errObj?.message || err}`;
 
         // Call onError callback
         if (options.onError) {
-          options.onError(err);
+          options.onError(err as Error);
         }
       }
       options.onUpdate?.({ error, isLoading: false });

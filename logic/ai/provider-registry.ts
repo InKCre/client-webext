@@ -28,7 +28,7 @@ export function parseModelString(
 ) {
   if (providers && providers.length > 0) {
     const registry = createLLMProviderRegistry(providers);
-    return registry.languageModel(modelString);
+    return registry.languageModel(modelString as `${string}:${string}`);
   } else {
     return modelString;
   }
