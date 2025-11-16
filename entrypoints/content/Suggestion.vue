@@ -1,17 +1,17 @@
 <template>
   <div
-    class="suggestion relative p-2 border border-gray-300 rounded bg-white hover:bg-gray-50 transition-colors cursor-pointer flex flex-col gap-y1"
+    class="suggestion relative p-2 border border-border bg-surface hover:bg-surface-2 transition-colors cursor-pointer flex flex-col gap-y1"
     @mouseover="isHovered = true"
     @mouseleave="isHovered = false"
     @click="applySuggestion"
   >
-    <div class="original text-gray-700 text-sm">{{ original }}</div>
-    <div class="replacement text-black font-medium text-sm">
+    <div class="original text-muted text-sm">{{ original }}</div>
+    <div class="replacement text-text font-medium text-sm">
       {{ replacement }}
     </div>
     <button
       v-show="isHovered"
-      class="copy-btn absolute bottom-2 right-2 p-1 bg-gray-200 hover:bg-gray-300 rounded transition-colors cursor-pointer flex border-none"
+      class="copy-btn"
       @click.stop="copyToClipboard"
       title="复制替换内容"
     >
@@ -48,3 +48,4 @@ const applySuggestion = () => {
   emit("apply", props.replacement);
 };
 </script>
+

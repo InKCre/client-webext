@@ -44,9 +44,9 @@
 }
 
 .arc-counter {
-  color: #6b7280;
+  color: rgb(var(--color-muted));
   font-size: 0.875rem;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-mono);
 }
 
 .nav-buttons {
@@ -57,17 +57,17 @@
 .nav-button {
   width: 48px;
   height: 24px;
-  background: #e5e7eb;
-  color: #374151;
+  background: rgb(var(--color-surface-2));
+  color: rgb(var(--color-text));
   font-weight: bold;
-  border: 1px solid #d1d5db;
-  border-radius: 2px;
+  border: 1px solid rgb(var(--color-border));
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-mono);
 
   &:hover:not(:disabled) {
-    background: #d1d5db;
+    background: rgb(var(--color-border));
   }
 
   &:active:not(:disabled) {
@@ -80,13 +80,13 @@
   }
 
   &:focus {
-    outline: 2px solid #000;
+    outline: 2px solid rgb(var(--color-text));
     outline-offset: 2px;
   }
 }
 
 .pressed {
-  background-color: #9ca3af !important;
+  background-color: rgb(var(--color-muted)) !important;
   transform: scale(0.95);
   transition: all 0.2s ease;
 }
@@ -122,6 +122,6 @@
 
 // Focus-visible for better keyboard navigation
 .nav-button:focus-visible {
-  outline: 2px solid #000;
+  outline: 2px solid rgb(var(--color-text));
   outline-offset: 2px;
 }

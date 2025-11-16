@@ -1,72 +1,90 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { onNewTask } from "~/logic/task";
-import Explain from "./Explain/Explain.vue";
-import TakingNote from "./TakingNote/TakingNote.vue";
+function openExplain() {
+    browser.tabs.getCurrent().then((tab) => {
+        browser.sidePanel.setOptions({
+            path: "./explain.html",
+            tabId: tab?.id,
+        });
+    });
+}
 
-const activeTab = ref("taking-note");
-const url = ref<string>();
+function openTakingNote() {
+    browser.tabs.getCurrent().then((tab) => {
+        browser.sidePanel.setOptions({
+            path: "./taking-note.html",
+            tabId: tab?.id,
+        });
+    });
+}
 </script>
 
 <template>
-    <div class="tabs">
-        <div class="tab-buttons">
-            <button
-                class="tab-button"
-                :class="{ active: activeTab === 'taking-note' }"
-                @click="activeTab = 'taking-note'"
-            >
-                Taking Note
+    <main class="features">
+        <header class="header">
+            <h1 class="title">InKCre</h1>
+            <p class="subtitle">Choose a feature</p>
+        </header>
+        <section class="list">
+            <button class="item" @click="openExplain">
+                <span class="item-title">Explain</span>
+                <span class="item-desc"
+                    >Summarize or explain selected text or page</span
+                >
             </button>
-            <button
-                class="tab-button"
-                :class="{ active: activeTab === 'explain' }"
-                @click="activeTab = 'explain'"
-            >
-                Explain
+            <button class="item" @click="openTakingNote">
+                <span class="item-title">Taking Note</span>
+                <span class="item-desc"
+                    >Capture notes and link related blocks</span
+                >
             </button>
-        </div>
-        <div class="tab-content">
-            <TakingNote
-                v-show="activeTab === 'taking-note'"
-                :url="url"
-                @activate="activeTab = $event"
-            />
-            <Explain
-                v-show="activeTab === 'explain'"
-                @activate="activeTab = 'explain'"
-            />
-        </div>
-    </div>
+        </section>
+    </main>
 </template>
 
-<style scoped>
-.tabs {
+<style scoped lang="scss">
+.features {
     display: flex;
     flex-direction: column;
     height: 100%;
+    padding: 16px;
+    gap: 12px;
 }
-
-.tab-buttons {
+.header {
+    margin-bottom: 8px;
+}
+.title {
+    font-size: 16px;
+    margin: 0;
+}
+.subtitle {
+    color: rgb(var(--color-muted));
+    margin: 4px 0 0;
+    font-size: 12px;
+}
+.list {
     display: flex;
-    border-bottom: 1px solid #ccc;
+    flex-direction: column;
+    gap: 8px;
 }
-
-.tab-button {
-    flex: 1;
-    padding: 10px;
-    background: none;
-    border: none;
+.item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid rgb(var(--color-border));
+    border-radius: 0;
+    background: rgb(var(--color-surface));
     cursor: pointer;
-    border-bottom: 2px solid transparent;
 }
-
-.tab-button.active {
-    border-bottom-color: #007acc;
+.item:hover {
+    background: rgb(var(--color-surface-2));
 }
-
-.tab-content {
-    flex: 1;
-    overflow: auto;
+.item-title {
+    font-weight: 600;
+}
+.item-desc {
+    color: rgb(var(--color-muted));
+    font-size: 12px;
 }
 </style>

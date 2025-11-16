@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { sendMessage } from "webext-bridge/popup";
+import { newTask } from "~/logic/task";
 import { onNewTask } from "@/logic/task";
 import Response from "~/components/ai/Response/Response.vue";
 import ProviderPicker from "~/components/common/ProviderPicker/ProviderPicker.vue";
@@ -43,9 +44,10 @@ const fetchExplanation = async () => {
     try {
         if (!query.value) {
             throw new Error("Nothing to explain");
+        } else {
+            // The stream will handle page content retrieval internally
+            await explainAgent.value.explain(query.value, tabId.value);
         }
-        // The stream will handle page content retrieval internally
-        await explainAgent.value.explain(query.value, tabId.value);
     } catch (error) {
         console.error("Error fetching explanation:", error);
     }
@@ -64,12 +66,14 @@ const stopExplanation = () => {
     }
 };
 
-const saveExplanation = () => {
-    // FIXME 可能需要提供 context ，或者不能通过消息的方式
-    sendMessage("set-sidepanel-mode", { mode: "taking-note" });
-    sendMessage("set-taking-note-params", {
-        text: String(explanation.value || ""),
+const saveExplanation = async () => {
+    // Create a Taking Note task with the generated explanation
+    await newTask({
+        type: "taking-note",
+        parameters: { text: String(explanation.value || "") },
     });
+    // Open the dedicated Taking Note sidepanel page
+    sendMessage("open-sidepanel", { path: "/taking-note.html" });
 };
 
 const saveQuery = (event: Event) => {
@@ -117,10 +121,6 @@ onNewTask("explain", (task) => {
                 >
                     请在扩展选项中配置至少一个 LLM 提供商的 API Key。
                 </p>
-            </div>
-            <div v-if="isSummarizingPage" class="status-message">
-                <i class="i-mdi-file-document-outline animate-pulse"></i>
-                正在总结页面内容...
             </div>
             <div class="explanation-text">
                 <Response :content="explanation" :is-loading="isLoading" />

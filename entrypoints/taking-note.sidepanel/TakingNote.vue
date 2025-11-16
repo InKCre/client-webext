@@ -7,8 +7,8 @@ import { Block } from "~/logic/info-base/block";
 import { ArcForm, StarGraphForm } from "~/logic/info-base/root";
 
 const props = defineProps<{
-  // 所在网页
-  url?: string;
+    // 所在网页
+    url?: string;
 }>();
 const emit = defineEmits<{ activate: [tab: string] }>();
 
@@ -20,75 +20,75 @@ const incomingEditor = ref<typeof ArcsEditor>();
 const outgoingEditor = ref<typeof ArcsEditor>();
 
 watch(selectedText, (newText) => {
-  if (newText) {
-    form.value.block.content = newText;
-    isFlashing.value = true;
-    setTimeout(() => {
-      isFlashing.value = false;
-    }, 500);
-  }
+    if (newText) {
+        form.value.block.content = newText;
+        isFlashing.value = true;
+        setTimeout(() => {
+            isFlashing.value = false;
+        }, 500);
+    }
 });
 
 // watch props.url, update the webpage block
 watch(
-  () => props.url,
-  (newUrl) => {
-    if (newUrl) {
-      const webpageArcIndex = form.value.in_relations.findIndex(
-        (arc) => arc.relation.content === "节选",
-      );
+    () => props.url,
+    (newUrl) => {
+        if (newUrl) {
+            const webpageArcIndex = form.value.in_relations.findIndex(
+                (arc) => arc.relation.content === "节选",
+            );
 
-      if (webpageArcIndex !== -1) {
-        // Update existing webpage block
-        const webpageBlock =
-          form.value.in_relations[webpageArcIndex].from_block?.block;
-        if (webpageBlock) {
-          webpageBlock.content = newUrl;
+            if (webpageArcIndex !== -1) {
+                // Update existing webpage block
+                const webpageBlock =
+                    form.value.in_relations[webpageArcIndex].from_block?.block;
+                if (webpageBlock) {
+                    webpageBlock.content = newUrl;
+                }
+            } else {
+                // Add new webpage block
+                form.value.in_relations.push(
+                    new ArcForm(
+                        { content: "节选" },
+                        null,
+                        new StarGraphForm(new Block("webpage", newUrl, "url")),
+                    ),
+                );
+            }
         }
-      } else {
-        // Add new webpage block
-        form.value.in_relations.push(
-          new ArcForm(
-            { content: "节选" },
-            null,
-            new StarGraphForm(new Block("webpage", newUrl, "url")),
-          ),
-        );
-      }
-    }
-  },
+    },
 );
 
 onMessage("set-taking-note-params", ({ data, sender }) => {
-  selectedText.value = data.text;
-  emit("activate", "taking-note");
+    selectedText.value = data.text;
+    emit("activate", "taking-note");
 });
 
 function handleKeydown(event: KeyboardEvent) {
-  if (!event.altKey) {
-    if (event.key === "Tab" && event.shiftKey) {
-      event.preventDefault();
-      incomingEditor.value?.addArc();
-    } else if (event.key === "Tab") {
-      event.preventDefault();
-      outgoingEditor.value?.addArc();
+    if (!event.altKey) {
+        if (event.key === "Tab" && event.shiftKey) {
+            event.preventDefault();
+            incomingEditor.value?.addArc();
+        } else if (event.key === "Tab") {
+            event.preventDefault();
+            outgoingEditor.value?.addArc();
+        }
     }
-  }
 }
 
 function submitText() {
-  // 发送请求
-  form.value
-    .create()
-    .then((response) => response.json())
-    .then((data) => {
-      console.log("Success:", data);
-      // 处理成功响应
-    })
-    .catch((error) => {
-      console.error("Error:", error);
-      // 处理错误
-    });
+    // 发送请求
+    form.value
+        .create()
+        .then((response) => response.json())
+        .then((data) => {
+            console.log("Success:", data);
+            // 处理成功响应
+        })
+        .catch((error) => {
+            console.error("Error:", error);
+            // 处理错误
+        });
 }
 </script>
 

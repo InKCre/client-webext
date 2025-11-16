@@ -1,7 +1,7 @@
 <template>
     <div
         v-show="showActionBar"
-        class="fixed z-100 box-border flex gap-2 items-start justify-start overflow-clip px-1.5 py-1 rounded-[2px] bg-gray-100 min-w-[60px]"
+        class="fixed z-100 box-border flex gap-2 items-start justify-start overflow-clip px-1.5 py-1 rounded-none bg-gray-100 min-w-[60px]"
         :style="{
             left: actionBarPosition.x + 'px',
             top: actionBarPosition.y + 'px',

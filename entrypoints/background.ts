@@ -2,18 +2,18 @@ import { onMessage, sendMessage } from "webext-bridge/background";
 import { browser } from "wxt/browser";
 
 export default defineBackground(() => {
-  onMessage("open-sidepanel", ({ sender }) => {
-    browser.sidePanel?.open({ tabId: sender.tabId }).then(() => {
-      // Notify the content script that sidepanel was opened
-      sendMessage(
-        "sidepanel-opened",
-        undefined,
-        `content-script@${sender.tabId}`,
-      );
+  onMessage("open-sidepanel", ({ sender, data }) => {
+    const tabId = sender.tabId;
+    const path = data?.path;
+
+    browser.sidePanel.open({ tabId }).then(() => {
+      // Keep notifying content script that sidepanel was opened
+      sendMessage("sidepanel-opened", undefined, `content-script@${tabId}`);
+      browser.sidePanel.setOptions({
+        path,
+        tabId,
+      });
     });
-  });
-  onMessage("new-task", async (message) => {
-    sendMessage("new-task", message.data, "popup");
   });
   browser.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "get-tab-id") {

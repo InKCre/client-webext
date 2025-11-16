@@ -36,13 +36,13 @@ defineExpose({
         class="relative w-full flex items-center justify-center h-8"
     >
         <div class="absolute inset-0 flex items-center justify-center">
-            <div class="w-full h-px bg-gray-400"></div>
+            <div class="w-full h-px bg-border"></div>
         </div>
-        <div class="absolute bg-white px-2 cursor-pointer">
+        <div class="absolute bg-surface px-2 cursor-pointer">
             <span
                 v-if="!editing"
                 @click="editing = true"
-                class="text-sm text-gray-600"
+                class="text-sm text-muted"
             >
                 {{ props.modelValue.content || "某种联系" }}
             </span>
@@ -52,18 +52,18 @@ defineExpose({
                 v-model="props.modelValue.content"
                 @blur="save"
                 @keyup.enter="save"
-                class="text-sm text-gray-600 bg-transparent border-none outline-none w-20 text-center"
+                class="text-sm text-muted bg-transparent border-none outline-none w-20 text-center"
                 placeholder="某种联系"
             />
         </div>
     </div>
     <div v-else class="w-full flex h-12 items-center px-4 gap-x2">
-        <div class="w-px bg-gray-400 h-full"></div>
-        <div class="bg-white cursor-pointer">
+        <div class="w-px bg-border h-full"></div>
+        <div class="bg-surface cursor-pointer">
             <span
                 v-if="!editing"
                 @click="editing = true"
-                class="text-sm text-gray-600"
+                class="text-sm text-muted"
             >
                 {{ props.modelValue.content || "某种联系" }}
             </span>
@@ -73,7 +73,7 @@ defineExpose({
                 v-model="props.modelValue.content"
                 @blur="save"
                 @keyup.enter="save"
-                class="text-sm text-gray-800 bg-transparent border-none outline-none w-20"
+                class="text-sm text-text bg-transparent border-none outline-none w-20"
                 placeholder="某种联系"
             />
         </div>

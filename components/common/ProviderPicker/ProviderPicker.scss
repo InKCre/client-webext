@@ -6,26 +6,26 @@
 
 .picker-label {
   font-size: 0.9rem;
-  color: #666;
+  color: rgb(var(--color-muted));
   white-space: nowrap;
 }
 
 .picker-select {
   flex: 1;
   padding: 4px 8px;
-  border: 1px solid #000;
-  background: #fff;
-  font-family: "Courier New", monospace;
+  border: 1px solid rgb(var(--color-text));
+  background: rgb(var(--color-surface));
+  font-family: var(--font-mono);
   font-size: 0.85rem;
   cursor: pointer;
 
   &:focus {
     outline: none;
-    border-color: #000;
-    background: #f9f9f9;
+    border-color: rgb(var(--color-text));
+    background: rgb(var(--color-surface-2));
   }
 
   option:disabled {
-    color: #999;
+    color: rgb(var(--color-muted));
   }
 }

@@ -11,7 +11,8 @@ import { newTask } from "~/logic/task";
 
 function openExplainSidePanel(selectedText: string) {
     const url = window.location.href;
-    sendMessage("open-sidepanel", undefined);
+    // Open the Explain sidepanel page specifically
+    sendMessage("open-sidepanel", { path: "/explain.html" });
     newTask({
         type: "explain",
         parameters: {

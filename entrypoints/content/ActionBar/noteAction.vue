@@ -17,10 +17,14 @@ import takingNote from "~/assets/taking-note.svg";
 
 function handleTakingNote() {
     const text = window.getSelection()?.toString() || "";
-    sendMessage("open-sidepanel", {
-        text,
-        mode: "taking-note",
-        url: window.location.href,
+    // Create a task for Taking Note so the sidepanel can pick it up
+    // and open the dedicated TakingNote page
+    import("~/logic/task").then(({ newTask }) => {
+        newTask({
+            type: "taking-note",
+            parameters: { text, url: window.location.href },
+        });
+        sendMessage("open-sidepanel", { path: "/taking-note.html" });
     });
 }
 </script>

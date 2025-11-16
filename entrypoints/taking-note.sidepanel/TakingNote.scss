@@ -1,5 +1,5 @@
 .taking-note-container {
-  background: #fff;
+  background: rgb(var(--color-surface));
   display: flex;
   flex-direction: column;
   padding: 16px;
@@ -18,11 +18,11 @@
 }
 
 .main-block-editor {
-  border: 2px solid #d1d5db;
+  border: 2px solid rgb(var(--color-border));
   transition: border-color 0.3s ease;
 
   &:focus-within {
-    border-color: #374151;
+    border-color: rgb(var(--color-brand));
   }
 }
 
@@ -32,13 +32,13 @@
 
 @keyframes flash {
   0% {
-    border-color: #6b7280;
+    border-color: rgb(var(--color-border));
   }
   50% {
-    border-color: #ef4444;
+    border-color: rgb(var(--color-danger));
   }
   100% {
-    border-color: #6b7280;
+    border-color: rgb(var(--color-border));
   }
 }
 
@@ -47,9 +47,9 @@
   margin-top: 16px;
   margin-left: auto;
   padding: 8px 16px;
-  background: #000;
+  background: rgb(var(--color-text));
   color: #fff;
-  font-family: "Courier New", monospace;
+  font-family: var(--font-mono);
   font-weight: 500;
   border: none;
   border-radius: 0;
@@ -58,17 +58,17 @@
   box-shadow: none;
 
   &:hover {
-    background: #374151;
+    background: color-mix(in srgb, rgb(var(--color-text)) 85%, rgb(var(--color-surface)) 15%);
     box-shadow: none;
   }
 
   &:active {
     transform: scale(0.98);
-    background: #1f2937;
+    background: color-mix(in srgb, rgb(var(--color-text)) 80%, black 20%);
   }
 
   &:focus {
-    outline: 2px solid #000;
+    outline: 2px solid rgb(var(--color-text));
     outline-offset: 2px;
   }
 }
@@ -83,7 +83,7 @@
 }
 
 .pressed {
-  background-color: #9ca3af !important;
+  background-color: rgb(var(--color-muted)) !important;
   transform: scale(0.95);
   transition: all 0.2s ease;
 }

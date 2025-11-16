@@ -62,7 +62,7 @@ defineExpose({ isFocusing, focusBlock, focusRelation });
                 :model-value="modelValue.from_block!.block"
                 placeholder="入向块内容..."
                 height="h-20"
-                border-color="border-gray-300"
+                border-color="border-border"
             />
             <div class="w-full">
                 <RelationEditor
@@ -85,7 +85,7 @@ defineExpose({ isFocusing, focusBlock, focusRelation });
                 :model-value="modelValue.to_block!.block"
                 placeholder="出向块内容..."
                 height="h-20"
-                border-color="border-gray-300"
+                border-color="border-border"
             />
         </template>
     </div>

@@ -48,9 +48,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 <style scoped>
 .ai-response {
-    font-family: "Courier New", monospace;
+    font-family: var(--font-mono);
     line-height: 1.6;
-    color: #333;
+    color: rgb(var(--color-text));
 }
 
 .ai-response-loading {
@@ -63,7 +63,7 @@ const props = withDefaults(defineProps<Props>(), {
     display: inline-block;
     width: 4px;
     height: 16px;
-    background: #000;
+    background: rgb(var(--color-text));
     animation: blink 1s infinite;
 }
 
@@ -82,19 +82,19 @@ const props = withDefaults(defineProps<Props>(), {
     display: inline-block;
     width: 2px;
     height: 1em;
-    background: #000;
+    background: rgb(var(--color-text));
     margin-left: 2px;
     animation: blink 1s infinite;
     vertical-align: text-bottom;
 }
 
 .ai-response-content {
-    color: #333;
+    color: rgb(var(--color-text));
 }
 
 .ai-response-empty {
     padding: 16px 0;
-    color: #666;
+    color: rgb(var(--color-muted));
     text-align: center;
 }
 
@@ -122,7 +122,7 @@ const props = withDefaults(defineProps<Props>(), {
 .ai-response-content :deep(h4),
 .ai-response-content :deep(h5),
 .ai-response-content :deep(h6) {
-    color: #000;
+    color: rgb(var(--color-text));
     margin: 20px 0 12px 0;
     font-weight: 600;
     line-height: 1.3;
@@ -147,20 +147,20 @@ const props = withDefaults(defineProps<Props>(), {
 }
 
 .ai-response-content :deep(code) {
-    background: #f5f5f5;
+    background: rgb(var(--color-surface-2));
     padding: 2px 6px;
-    border-radius: 3px;
-    font-family: "Courier New", Monaco, monospace;
+    border-radius: 0;
+    font-family: var(--font-mono);
     font-size: 0.9em;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgb(var(--color-border));
 }
 
 .ai-response-content :deep(pre) {
-    background: #f5f5f5;
+    background: rgb(var(--color-surface-2));
     padding: 12px;
-    border-radius: 4px;
+    border-radius: 0;
     overflow-x: auto;
-    border: 1px solid #e0e0e0;
+    border: 1px solid rgb(var(--color-border));
     margin: 12px 0;
 }
 
@@ -184,13 +184,13 @@ const props = withDefaults(defineProps<Props>(), {
 .ai-response-content :deep(blockquote) {
     margin: 12px 0;
     padding: 8px 16px;
-    border-left: 4px solid #ddd;
-    background: #f9f9f9;
-    color: #666;
+    border-left: 4px solid rgb(var(--color-border));
+    background: rgb(var(--color-surface-2));
+    color: rgb(var(--color-muted));
 }
 
 .ai-response-content :deep(a) {
-    color: #0066cc;
+    color: rgb(var(--color-brand));
     text-decoration: none;
 }
 
@@ -200,7 +200,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 .ai-response-content :deep(hr) {
     border: none;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid rgb(var(--color-border));
     margin: 20px 0;
 }
 
@@ -212,13 +212,13 @@ const props = withDefaults(defineProps<Props>(), {
 
 .ai-response-content :deep(th),
 .ai-response-content :deep(td) {
-    border: 1px solid #ddd;
+    border: 1px solid rgb(var(--color-border));
     padding: 8px 12px;
     text-align: left;
 }
 
 .ai-response-content :deep(th) {
-    background: #f5f5f5;
+    background: rgb(var(--color-surface-2));
     font-weight: 600;
 }
 
